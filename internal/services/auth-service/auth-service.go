@@ -54,13 +54,6 @@ type ApiError struct {
 func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
 	var body *userDTO
 
-	/*todo:
-	- check to see if email and msisdn already exists and throw error  if it does
-	- create user and generate jwt signed token
-	- send the signed token in both the request body and append it to the browser cookie
-	-
-	*/
-
 	err := json.NewDecoder(r.Body).Decode(&body)
 
 	if err != nil {
@@ -82,6 +75,13 @@ func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(res)
 		return
 	}
+
+	/*todo:
+	- check to see if email and msisdn already exists and throw error  if it does
+	- create user and generate jwt signed token
+	- send the signed token in both the request body and append it to the browser cookie
+	-
+	*/
 
 	//  save user in db
 	u, err := s.Repo.Create(r.Context(), *body.Email)
