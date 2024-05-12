@@ -6,11 +6,15 @@ package database
 
 import (
 	"context"
+	"database/sql"
 )
 
 type Querier interface {
-	Create(ctx context.Context, email string) (User, error)
-	FindMany(ctx context.Context) ([]User, error)
+	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	GetUserByEmail(ctx context.Context, email string) (User, error)
+	GetUserByID(ctx context.Context, id string) (User, error)
+	GetUserByMsisdn(ctx context.Context, msisdn sql.NullString) (User, error)
+	GetUsers(ctx context.Context) ([]User, error)
 }
 
 var _ Querier = (*Queries)(nil)

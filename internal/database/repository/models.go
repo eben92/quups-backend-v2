@@ -5,12 +5,64 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 )
 
+type Account struct {
+	ID                string         `json:"id"`
+	Provider          string         `json:"provider"`
+	ProviderAccountID string         `json:"provider_account_id"`
+	Type              string         `json:"type"`
+	ExpiresAt         int32          `json:"expires_at"`
+	TokenType         string         `json:"token_type"`
+	AccessToken       sql.NullString `json:"access_token"`
+	RefreshToken      sql.NullString `json:"refresh_token"`
+	AccountType       sql.NullString `json:"account_type"`
+	IDToken           sql.NullString `json:"id_token"`
+	Scope             sql.NullString `json:"scope"`
+	UserID            string         `json:"user_id"`
+	CreatedAt         time.Time      `json:"created_at"`
+	UpdatedAt         time.Time      `json:"updated_at"`
+}
+
+type Address struct {
+	ID               string          `json:"id"`
+	Street           string          `json:"street"`
+	City             string          `json:"city"`
+	Region           sql.NullString  `json:"region"`
+	Country          string          `json:"country"`
+	CountryCode      string          `json:"country_code"`
+	FormattedAddress sql.NullString  `json:"formatted_address"`
+	Description      sql.NullString  `json:"description"`
+	PostalCode       sql.NullString  `json:"postal_code"`
+	Latitude         sql.NullFloat64 `json:"latitude"`
+	Longitude        sql.NullFloat64 `json:"longitude"`
+	Msisdn           sql.NullString  `json:"msisdn"`
+	IsDefault        sql.NullBool    `json:"is_default"`
+	UserID           sql.NullString  `json:"user_id"`
+	CompanyID        sql.NullString  `json:"company_id"`
+	CreatedAt        time.Time       `json:"created_at"`
+	UpdatedAt        time.Time       `json:"updated_at"`
+}
+
 type User struct {
-	ID        int64     `json:"id"`
-	Email     string    `json:"email"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID            string         `json:"id"`
+	Email         string         `json:"email"`
+	EmailVerified sql.NullTime   `json:"email_verified"`
+	Msisdn        sql.NullString `json:"msisdn"`
+	Username      sql.NullString `json:"username"`
+	FirstName     sql.NullString `json:"first_name"`
+	LastName      sql.NullString `json:"last_name"`
+	FullName      sql.NullString `json:"full_name"`
+	ImageUrl      sql.NullString `json:"image_url"`
+	TinNumber     sql.NullString `json:"tin_number"`
+	Gender        sql.NullString `json:"gender"`
+	Dob           sql.NullTime   `json:"dob"`
+	Otp           sql.NullString `json:"otp"`
+	AppPushToken  sql.NullString `json:"app_push_token"`
+	WebPushToken  sql.NullString `json:"web_push_token"`
+	Password      sql.NullString `json:"password"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
 }
