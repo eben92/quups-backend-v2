@@ -8,16 +8,20 @@ import (
 	"os"
 	"time"
 
+	repository "quups-backend/internal/database/repository"
+
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
 )
 
 type Service interface {
 	Health() map[string]string
+	Repository() *repository.Queries
 }
 
 type service struct {
-	db *sql.DB
+	db         *sql.DB
+	repository *repository.Queries
 }
 
 var (
@@ -29,7 +33,7 @@ var (
 	dbInstance *service
 )
 
-func New() Service {
+func NewService() Service {
 	// Reuse Connection
 	if dbInstance != nil {
 		return dbInstance
@@ -39,10 +43,18 @@ func New() Service {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	dbInstance = &service{
-		db: db,
+		db:         db,
+		repository: repository.New(db),
 	}
 	return dbInstance
+}
+
+func (s *service) Repository() *repository.Queries {
+
+	return s.repository
+
 }
 
 func (s *service) Health() map[string]string {

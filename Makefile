@@ -1,4 +1,15 @@
 # Simple Makefile for a Go project
+include .env
+
+
+DATABASE_URL="postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_DATABASE)?sslmode=disable"
+GOOSE_MIGRATION_DIR= "./internal/database/migrations"
+GOOSE_DRIVER=postgres
+GOOSE_DBSTRING=$(DATABASE_URL)
+
+
+ec:
+	@goose $(GOOSE_DRIVER) "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USERNAME) password=$(DB_PASSWORD) dbname=$(DB_DATABASE) sslmode=disable" status
 
 # Build the application
 all: build
@@ -56,5 +67,72 @@ watch:
 	        exit 1; \
 	    fi; \
 	fi
+
+schema:
+	@echo "Generating schema..."
+	@goose -dir $(GOOSE_MIGRATION_DIR) create new sql  
+	@echo "Generated!"
+
+sqlc: 
+	@echo "Generating..."
+	@sqlc generate
+	@echo "Generated!"
+
+db-pull:
+	@echo "Pulling..."
+	@supabase db pull --db-url $(DATABASE_URL)
+	@echo "Pulled!"	
+
+db-pull-debug:
+	@echo "Pulling..."
+	@supabase db pull --debug
+	@echo "Pulled!"		
+
+db-push:
+	@echo "Pushing..."
+	@supabase db push
+	@echo "Pushed!"
+
+db-reset:
+	@echo "Diffing..."
+	@goose -dir "$(GOOSE_MIGRATION_DIR)" $(GOOSE_DRIVER) "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USERNAME) password=$(DB_PASSWORD) dbname=$(DB_DATABASE) sslmode=disable" reset
+	@echo "Diffed!"
+
+db-status:
+	@echo "Status..."
+	@goose -dir "$(GOOSE_MIGRATION_DIR)" $(GOOSE_DRIVER) "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USERNAME) password=$(DB_PASSWORD) dbname=$(DB_DATABASE) sslmode=disable" status
+	@echo "DONE!"		
+
+db-migrate-up:
+	@echo "Migrating..."
+	@goose -dir "$(GOOSE_MIGRATION_DIR)" $(GOOSE_DRIVER) "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USERNAME) password=$(DB_PASSWORD) dbname=$(DB_DATABASE) sslmode=disable" up
+	@echo "Migrated!"
+
+db-migrate-down:
+	@echo "Migrating..."
+	@goose -dir "$(GOOSE_MIGRATION_DIR)" $(GOOSE_DRIVER) "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USERNAME) password=$(DB_PASSWORD) dbname=$(DB_DATABASE) sslmode=disable" down
+	@echo "Migrated!"
+
+db-sync:
+	@echo "syncing db..."
+	@supabase migration up
+	@echo "synced"
+
+db-repair: 
+	@echo "Repairing..."
+	@read -p "Enter migration ID: " id; \
+	read -p "Enter migration status (applied or reverted): " status; \
+	supabase migration repair $$id --status $$status; \
+	echo "Repaired!"
+
+db-repair-raw:
+	@echo "Repairing..."
+	@supabase migration repair --status applied
+	@echo "Repaired!"
+
+docker-stop-all:
+	@echo "Stopping all containers..."
+	@docker stop $$(docker ps -a -q)
+	@echo "Stopped all containers!"
 
 .PHONY: all build run test clean
