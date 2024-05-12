@@ -49,12 +49,9 @@ type Address struct {
 type User struct {
 	ID            string         `json:"id"`
 	Email         string         `json:"email"`
-	EmailVerified sql.NullTime   `json:"email_verified"`
 	Msisdn        sql.NullString `json:"msisdn"`
-	Username      sql.NullString `json:"username"`
-	FirstName     sql.NullString `json:"first_name"`
-	LastName      sql.NullString `json:"last_name"`
-	FullName      sql.NullString `json:"full_name"`
+	EmailVerified sql.NullTime   `json:"email_verified"`
+	Name          sql.NullString `json:"name"`
 	ImageUrl      sql.NullString `json:"image_url"`
 	TinNumber     sql.NullString `json:"tin_number"`
 	Gender        sql.NullString `json:"gender"`

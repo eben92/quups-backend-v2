@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,7 +15,7 @@ type Service struct {
 
 func (s *Service) Signin(w http.ResponseWriter, r *http.Request) {
 
-	res, err := s.Repo.FindMany(r.Context())
+	res, err := s.Repo.GetUsers(r.Context())
 
 	if err != nil {
 		fmt.Print(err.Error())
@@ -23,12 +24,16 @@ func (s *Service) Signin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("login successfully")
+	result := []userDTO{}
+	for i := 0; i < len(res); i++ {
+		u := mapToUserDTO(res[i])
+		result = append(result, *u)
+	}
 
 	var response struct {
-		Results []repository.User `json:"results"`
+		Results []userDTO `json:"results"`
 	}
-	response.Results = res
+	response.Results = result
 
 	data, err := json.Marshal(response)
 
@@ -41,7 +46,7 @@ func (s *Service) Signin(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(data)
 }
 
-type userDTO struct {
+type userBody struct {
 	Email *string
 }
 
@@ -52,7 +57,7 @@ type ApiError struct {
 }
 
 func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
-	var body *userDTO
+	var body *userBody
 
 	err := json.NewDecoder(r.Body).Decode(&body)
 
@@ -84,15 +89,31 @@ func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
 	*/
 
 	//  save user in db
-	u, err := s.Repo.Create(r.Context(), *body.Email)
+	u, err := s.createUser(r.Context(), body)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		_, _ = w.Write([]byte(err.Error()))
 		return
 	}
-	res, _ := json.Marshal(u)
 
-	fmt.Println("signup successfully")
+	new_u := mapToUserDTO(u)
+	res, _ := json.Marshal(new_u)
+
 	_, _ = w.Write(res)
+}
+
+func (s *Service) createUser(ctx context.Context, body *userBody) (repository.User, error) {
+
+	u, err := s.Repo.CreateUser(ctx, repository.CreateUserParams{
+		Email: *body.Email,
+	})
+
+	if err != nil {
+
+		return repository.User{}, err
+	}
+
+	return u, nil
+
 }
