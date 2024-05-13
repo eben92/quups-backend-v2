@@ -13,8 +13,8 @@ type Response struct {
 type ApiResponseParams struct {
 	StatusCode int    `json:"status_code"`
 	Message    string `json:"message"`
-	path       string
-	Results    any `json:"results"`
+	Path       string `json:"path"`
+	Results    any    `json:"results"`
 }
 
 func New(w http.ResponseWriter, r *http.Request) *Response {
@@ -33,7 +33,7 @@ func (r *Response) WrapInApiResponse(data *ApiResponseParams) ([]byte, error) {
 		Results:    data.Results,
 		StatusCode: data.StatusCode,
 		Message:    data.Message,
-		path:       r.req.URL.Path,
+		Path:       r.req.URL.Path,
 	})
 }
 
