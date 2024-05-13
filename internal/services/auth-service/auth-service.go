@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"net/http"
 
-	repository "quups-backend/internal/database/repository"
-	userservice "quups-backend/internal/services/user-service"
-	"quups-backend/internal/util"
+	"quups-backend/internal/database/repository"
+	userservice "quups-backend/internal/services/user-service/service"
+	"quups-backend/internal/utils"
 )
 
 type Service struct {
@@ -23,8 +23,8 @@ func New(r *repository.Queries) *Service {
 }
 
 func (s *Service) Signin(w http.ResponseWriter, r *http.Request) {
+	util := utils.New(w, r)
 
-	response := util.Response{}
 	var res []byte
 
 	u, err := s.repo.GetUsers(r.Context())
@@ -32,10 +32,10 @@ func (s *Service) Signin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Print(err.Error())
 
-		res, _ = response.Builder(w, r, &util.ApiResponseParams{
+		res, _ = util.WrapInApiResponse(&utils.ApiResponseParams{
 			Results:    err.Error(),
 			StatusCode: http.StatusBadRequest,
-			Message:    util.String("Error getting users. Please try again"),
+			Message:    "Error getting users. Please try again",
 		})
 
 		_, _ = w.Write(res)
@@ -52,10 +52,10 @@ func (s *Service) Signin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// w.WriteHeader(http.StatusCreated)
-	res, _ = response.Builder(w, r, &util.ApiResponseParams{
+	res, _ = util.WrapInApiResponse(&utils.ApiResponseParams{
 		Results:    result,
 		StatusCode: http.StatusOK,
-		Message:    util.String("users retrieved successfully"),
+		Message:    "users retrieved successfully",
 	})
 
 	_, _ = w.Write(res)
@@ -70,20 +70,18 @@ type userBody struct {
 
 func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
 	var body *userBody
-	response := util.Response{}
-	userService := userservice.New(s.repo)
-
-	userService.GetUserByEmail()
+	util := utils.New(w, r)
+	uService := userservice.New(r.Context(), s.repo)
 
 	err := json.NewDecoder(r.Body).Decode(&body)
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 
-		res, _ := response.Builder(w, r, &util.ApiResponseParams{
+		res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
 			Results:    nil,
 			StatusCode: http.StatusBadRequest,
-			Message:    util.String(err.Error()),
+			Message:    err.Error(),
 		})
 
 		_, _ = w.Write(res)
@@ -92,12 +90,11 @@ func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
 
 	// check if email is nil
 	if body.Email == nil || body.Name == nil || body.Msisdn == nil {
-		w.WriteHeader(http.StatusBadRequest)
 
-		res, _ := response.Builder(w, r, &util.ApiResponseParams{
+		res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
 			Results:    nil,
 			StatusCode: http.StatusBadRequest,
-			Message:    util.String("Email and Name is required"),
+			Message:    "Email and Name is required",
 		})
 
 		_, _ = w.Write(res)
@@ -105,63 +102,28 @@ func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check to see if email or msisdn msisdn already exists and throw error  if it does
-	g, err := s.repo.GetUserByEmail(r.Context(), *body.Email)
-
-	fmt.Println(g)
-
-	cUser := userDTO{}
-
-	//*mapToUserDTO(userInDB)
+	cUser, err := uService.GetUserByEmail(*body.Email)
 
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-
-		res, _ := response.Builder(w, r, &util.ApiResponseParams{
+		res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
 			Results:    nil,
 			StatusCode: http.StatusBadRequest,
-			Message:    util.String(err.Error()),
+			Message:    err.Error(),
 		})
 
 		_, _ = w.Write(res)
+		return
 	}
-
-	// if cUser != nil {
-	// 	w.WriteHeader(http.StatusBadRequest)
-
-	// 	res, _ := response.Builder(w, r, &util.ApiResponseParams{
-	// 		Results:    nil,
-	// 		StatusCode: http.StatusBadRequest,
-	// 		Message:    util.String(err.Error()),
-	// 	})
-
-	// 	_, _ = w.Write(res)
-	// }
 
 	//create user and generate jwt signed token
 	// send the signed token in both the request body and append it to the browser cookie
 
 	//  save user in db
-	// u, err := s.createUser(r.Context(), body)
 
-	// if err != nil {
-	// 	w.WriteHeader(http.StatusBadRequest)
-
-	// 	res, _ := response.Builder(w, r, &util.ApiResponseParams{
-	// 		Results:    nil,
-	// 		StatusCode: http.StatusBadRequest,
-	// 		Message:    util.String(err.Error()),
-	// 	})
-
-	// 	_, _ = w.Write(res)
-	// 	return
-	// }
-
-	// new_u := mapToUserDTO(u)
-
-	res, _ := response.Builder(w, r, &util.ApiResponseParams{
+	res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
 		Results:    cUser,
-		StatusCode: http.StatusBadRequest,
-		Message:    util.String("user created successfully"),
+		StatusCode: http.StatusOK,
+		Message:    "user created successfully",
 	})
 
 	_, _ = w.Write(res)
