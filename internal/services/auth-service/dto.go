@@ -1,4 +1,4 @@
-package services
+package authservice
 
 import (
 	model "quups-backend/internal/database/repository"
@@ -14,6 +14,7 @@ type userDTO struct {
 }
 
 func mapToUserDTO(user model.User) *userDTO {
+
 	dto := &userDTO{
 		ID:    user.ID,
 		Email: user.Email,

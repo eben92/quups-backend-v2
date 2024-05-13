@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	repository "quups-backend/internal/database/repository"
+	"quups-backend/internal/database/repository"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
