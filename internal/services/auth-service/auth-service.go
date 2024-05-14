@@ -1,13 +1,12 @@
 package authservice
 
 import (
-	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 
 	"quups-backend/internal/database/repository"
+	userdto "quups-backend/internal/services/user-service/dto"
 	userservice "quups-backend/internal/services/user-service/service"
 	"quups-backend/internal/utils"
 )
@@ -61,21 +60,15 @@ func (s *Service) Signin(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(res)
 }
 
-type userBody struct {
-	Email    *string
-	Name     *string
-	Msisdn   *string
-	Password string
-}
-
 func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
-	var body *userBody
+	var body *userdto.CreateUserParams
 	util := utils.New(w, r)
 	uService := userservice.New(r.Context(), s.repo)
 
 	err := json.NewDecoder(r.Body).Decode(&body)
 
 	if err != nil {
+		fmt.Println("error herrrrrrrrrrrrrrrrrrrrrrrrrr")
 		w.WriteHeader(http.StatusBadRequest)
 
 		res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
@@ -89,20 +82,38 @@ func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// check if email is nil
-	if body.Email == nil || body.Name == nil || body.Msisdn == nil {
+	// if body.Email == nil || body.Name == nil || body.Msisdn == nil {
 
-		res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
-			Results:    nil,
-			StatusCode: http.StatusBadRequest,
-			Message:    "Email and Name is required",
-		})
+	// 	res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
+	// 		Results:    nil,
+	// 		StatusCode: http.StatusBadRequest,
+	// 		Message:    "Email and Name is required",
+	// 	})
 
-		_, _ = w.Write(res)
-		return
-	}
+	// 	_, _ = w.Write(res)
+	// 	return
+	// }
 
 	// check to see if email or msisdn msisdn already exists and throw error  if it does
-	cUser, err := uService.GetUserByEmail(*body.Email)
+	// cUser, err := uService.FindByEmail(*body.Email)
+
+	// if err != nil {
+	// 	res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
+	// 		Results:    nil,
+	// 		StatusCode: http.StatusBadRequest,
+	// 		Message:    err.Error(),
+	// 	})
+
+	// 	_, _ = w.Write(res)
+	// 	return
+	// }
+
+	//create user and generate jwt signed token
+	// send the signed token in both the request body and append it to the browser cookie
+
+	//  save user in db
+
+	cUser, err := uService.Create(body)
 
 	if err != nil {
 		res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
@@ -115,11 +126,6 @@ func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//create user and generate jwt signed token
-	// send the signed token in both the request body and append it to the browser cookie
-
-	//  save user in db
-
 	res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
 		Results:    cUser,
 		StatusCode: http.StatusOK,
@@ -127,25 +133,4 @@ func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
 	})
 
 	_, _ = w.Write(res)
-}
-
-func (s *Service) createUser(ctx context.Context, body *userBody) (repository.User, error) {
-
-	n := *body.Name
-
-	u, err := s.repo.CreateUser(ctx, repository.CreateUserParams{
-		Email: *body.Email,
-		Name: sql.NullString{
-			String: n,
-			Valid:  true,
-		},
-	})
-
-	if err != nil {
-
-		return repository.User{}, err
-	}
-
-	return u, nil
-
 }
