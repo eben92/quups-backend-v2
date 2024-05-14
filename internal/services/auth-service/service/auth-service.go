@@ -12,6 +12,13 @@ import (
 	"quups-backend/internal/utils"
 )
 
+const (
+	emailErr    = "Email is required"
+	nameErr     = "Name is required"
+	enErr       = "Email and name is required"
+	msisdnTaken = "Phone number already in use."
+)
+
 type Service struct {
 	repo *repository.Queries
 }
@@ -62,11 +69,15 @@ func (s *Service) Signin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
+
 	var body *userdto.CreateUserParams
+	var user *userdto.UserInternalDTO
+
 	util := utils.New(w, r)
 	uService := userservice.New(r.Context(), s.repo)
 
 	err := json.NewDecoder(r.Body).Decode(&body)
+	defer r.Body.Close()
 
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -81,14 +92,29 @@ func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// check to see if email or msisdn msisdn already exists and throw error  if it does
+	// check to see if email or msisdn already exists and throw error  if it does
+
+	// if body.Email == nil {
+	// 	log.Println(emailErr)
+
+	// 	w.WriteHeader(http.StatusBadRequest)
+	// 	res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
+	// 		Results:    nil,
+	// 		StatusCode: http.StatusBadRequest,
+	// 		Message:    emailErr,
+	// 	})
+
+	// 	_, _ = w.Write(res)
+	// 	return
+
+	// }
 
 	//create user and generate jwt signed token
 	// send the signed token in both the request body and append it to the browser cookie
 
 	//  save user in db
 
-	newUser, err := uService.Create(body)
+	user, err = uService.Create(body)
 
 	if err != nil {
 		res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
@@ -102,7 +128,7 @@ func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
-		Results:    newUser,
+		Results:    user,
 		StatusCode: http.StatusOK,
 		Message:    "user created successfully",
 	})

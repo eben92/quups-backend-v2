@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	authservice "quups-backend/internal/services/auth-service"
+	authservice "quups-backend/internal/services/auth-service/service"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"

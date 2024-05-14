@@ -24,67 +24,92 @@ func New(c context.Context, r *repository.Queries) *Service {
 
 func (s *Service) TestCreate(body *userdto.CreateUserParams) (*model.CreateUserParams, error) {
 
-	if body.Name == nil {
+	if body.Name == "" {
 		return nil, fmt.Errorf("user name is required")
 	}
 
 	u := &model.CreateUserParams{
-		Email: *body.Email,
+		Email: body.Email,
 		Name: sql.NullString{
-			String: *body.Name,
+			String: body.Name,
 		},
 	}
 
-	if body.Gender != nil {
-		u.Gender.String = *body.Gender
+	if body.Gender != "" {
+		u.Gender.String = body.Gender
 	}
 
-	if body.Msisdn != nil {
-		u.Msisdn.String = *body.Msisdn
+	if body.Msisdn != "" {
+		u.Msisdn.String = body.Msisdn
 	}
 
-	if body.Password != nil {
+	if body.Password != "" {
 
 		// todo: hash password here
-		u.Password.String = *body.Password
+		u.Password.String = body.Password
 	}
 
 	return u, nil
 }
 
-func createUserParams(body *userdto.CreateUserParams) (*model.CreateUserParams, error) {
+func (s *Service) createUserParams(body *userdto.CreateUserParams) (*model.CreateUserParams, error) {
 
-	if body.Name == nil || body.Email == nil {
+	if body.Name == "" || body.Email == "" {
 		return nil, fmt.Errorf("user name and email is required")
 	}
+	log.Printf("setting up params to create user with name and email: [%s] [%s]", body.Name, body.Email)
 
-	u := &model.CreateUserParams{
-		Email: *body.Email,
+	p := &model.CreateUserParams{
+		Email: body.Email,
 		Name: sql.NullString{
-			String: *body.Name,
+			String: body.Name,
+			Valid:  true,
 		},
 	}
 
-	if body.Gender != nil {
-		u.Gender.String = *body.Gender
+	u, _ := s.repo.GetUserByEmail(s.ctx, p.Email)
+
+	if u.ID != "" {
+		log.Printf("User with email  [%s] already exist", body.Email)
+		return nil, fmt.Errorf("User with email [%s] already exist", body.Email)
 	}
 
-	if body.Msisdn != nil {
-		u.Msisdn.String = *body.Msisdn
+	if body.Gender != "" {
+		p.Gender.String = body.Gender
+		p.Gender.Valid = true
 	}
 
-	if body.Password != nil {
+	if body.Msisdn != "" {
+
+		// TODO: validate phone number
+
+		u, _ := s.repo.GetUserByMsisdn(s.ctx, sql.NullString{
+			String: body.Msisdn,
+			Valid:  true,
+		})
+
+		if u.ID != "" {
+			log.Printf("User with msisdn [%s] already exist", body.Msisdn)
+			return nil, fmt.Errorf("Phone number [%s] already in use", body.Msisdn)
+		}
+
+		p.Msisdn.String = body.Msisdn
+		p.Msisdn.Valid = true
+	}
+
+	if body.Password != "" {
 
 		// todo: hash password here
-		u.Password.String = *body.Password
+		p.Password.String = body.Password
+		p.Password.Valid = true
 	}
 
-	return u, nil
+	return p, nil
 }
 
 func (s *Service) Create(body *userdto.CreateUserParams) (*userdto.UserInternalDTO, error) {
 	var user *userdto.UserInternalDTO
-	params, err := createUserParams(body)
+	params, err := s.createUserParams(body)
 
 	if err != nil {
 		log.Printf("failed to create user error: [%s]", err.Error())
@@ -92,7 +117,7 @@ func (s *Service) Create(body *userdto.CreateUserParams) (*userdto.UserInternalD
 		return nil, err
 	}
 
-	log.Printf("about to create new user wih email [%s]", *body.Email)
+	log.Printf("about to create new user wih email [%s]", params.Email)
 
 	u, err := s.repo.CreateUser(s.ctx, *params)
 

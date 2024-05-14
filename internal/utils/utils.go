@@ -3,6 +3,7 @@ package utils
 import (
 	"encoding/json"
 	"net/http"
+	"net/mail"
 )
 
 type Response struct {
@@ -39,4 +40,15 @@ func (r *Response) WrapInApiResponse(data *ApiResponseParams) ([]byte, error) {
 
 func String(s string) *string {
 	return &s
+}
+
+func ValidateMsisdn(s string) {
+	// TODO
+}
+
+func IsVaildEmail(e string) bool {
+
+	_, err := mail.ParseAddress(e)
+
+	return err == nil
 }
