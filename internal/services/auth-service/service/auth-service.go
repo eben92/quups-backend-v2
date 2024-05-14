@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"quups-backend/internal/database/repository"
+	authdto "quups-backend/internal/services/auth-service/dto"
 	userdto "quups-backend/internal/services/user-service/dto"
 	userservice "quups-backend/internal/services/user-service/service"
 	"quups-backend/internal/utils"
@@ -41,7 +42,7 @@ func (s *Service) Signin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result := []userDTO{}
+	result := []authdto.UserDTO{}
 
 	fmt.Println(result)
 
@@ -68,7 +69,6 @@ func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&body)
 
 	if err != nil {
-		fmt.Println("error herrrrrrrrrrrrrrrrrrrrrrrrrr")
 		w.WriteHeader(http.StatusBadRequest)
 
 		res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
@@ -81,39 +81,14 @@ func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// check if email is nil
-	// if body.Email == nil || body.Name == nil || body.Msisdn == nil {
-
-	// 	res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
-	// 		Results:    nil,
-	// 		StatusCode: http.StatusBadRequest,
-	// 		Message:    "Email and Name is required",
-	// 	})
-
-	// 	_, _ = w.Write(res)
-	// 	return
-	// }
-
 	// check to see if email or msisdn msisdn already exists and throw error  if it does
-	// cUser, err := uService.FindByEmail(*body.Email)
-
-	// if err != nil {
-	// 	res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
-	// 		Results:    nil,
-	// 		StatusCode: http.StatusBadRequest,
-	// 		Message:    err.Error(),
-	// 	})
-
-	// 	_, _ = w.Write(res)
-	// 	return
-	// }
 
 	//create user and generate jwt signed token
 	// send the signed token in both the request body and append it to the browser cookie
 
 	//  save user in db
 
-	cUser, err := uService.Create(body)
+	newUser, err := uService.Create(body)
 
 	if err != nil {
 		res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
@@ -127,10 +102,37 @@ func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
-		Results:    cUser,
+		Results:    newUser,
 		StatusCode: http.StatusOK,
 		Message:    "user created successfully",
 	})
 
 	_, _ = w.Write(res)
+}
+
+func mapToUserDTO(user repository.User) *authdto.UserDTO {
+
+	dto := &authdto.UserDTO{
+		ID:    user.ID,
+		Email: user.Email,
+	}
+
+	if user.Name.Valid {
+		dto.Name = &user.Name.String
+	}
+
+	if user.Msisdn.Valid {
+		dto.Msisdn = &user.Msisdn.String
+	}
+
+	if user.ImageUrl.Valid {
+		dto.ImageUrl = &user.ImageUrl.String
+	}
+
+	if user.Gender.Valid {
+		dto.Gender = &user.Gender.String
+	}
+
+	return dto
+
 }

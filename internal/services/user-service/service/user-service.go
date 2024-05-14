@@ -192,6 +192,14 @@ func (s *Service) FindByMsisdn(msisdn string) (*userdto.UserInternalDTO, error) 
 
 }
 
+func (s *Service) Update(id string) {
+	// todo:
+}
+
+func (s *Service) Delete(id string) {
+	// todo:
+}
+
 func mapToUserInternalDTO(user model.User) *userdto.UserInternalDTO {
 
 	dto := &userdto.UserInternalDTO{
