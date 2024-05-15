@@ -1,6 +1,7 @@
 package authservice
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -21,51 +22,28 @@ const (
 
 type Service struct {
 	repo *repository.Queries
+	ctx  context.Context
 }
 
-func New(r *repository.Queries) *Service {
+func New(ctx context.Context, r *repository.Queries) *Service {
 	return &Service{
 		repo: r,
+		ctx:  ctx,
 	}
 }
 
-func (s *Service) Signin(w http.ResponseWriter, r *http.Request) {
-	util := utils.New(w, r)
+func (s *Service) SigninHandler(body *authdto.SignInRequestDTO) (*authdto.ResponseUserDTO, error) {
+	uService := userservice.New(s.ctx, s.repo)
 
-	var res []byte
-
-	u, err := s.repo.GetUsers(r.Context())
+	u, err := uService.FindByMsisdn(body.Msisdn)
 
 	if err != nil {
-		fmt.Print(err.Error())
-
-		res, _ = util.WrapInApiResponse(&utils.ApiResponseParams{
-			Results:    err.Error(),
-			StatusCode: http.StatusBadRequest,
-			Message:    "Error getting users. Please try again",
-		})
-
-		_, _ = w.Write(res)
-		return
+		return nil, fmt.Errorf("incorrect phone number or password")
 	}
 
-	result := []authdto.UserDTO{}
+	user := mapToUserDTO(u)
 
-	fmt.Println(result)
-
-	for i := 0; i < len(u); i++ {
-		u := mapToUserDTO(u[i])
-		result = append(result, *u)
-	}
-
-	// w.WriteHeader(http.StatusCreated)
-	res, _ = util.WrapInApiResponse(&utils.ApiResponseParams{
-		Results:    result,
-		StatusCode: http.StatusOK,
-		Message:    "users retrieved successfully",
-	})
-
-	_, _ = w.Write(res)
+	return user, nil
 }
 
 func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
@@ -136,27 +114,15 @@ func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(res)
 }
 
-func mapToUserDTO(user repository.User) *authdto.UserDTO {
+func mapToUserDTO(user *userdto.UserInternalDTO) *authdto.ResponseUserDTO {
 
-	dto := &authdto.UserDTO{
-		ID:    user.ID,
-		Email: user.Email,
-	}
-
-	if user.Name.Valid {
-		dto.Name = &user.Name.String
-	}
-
-	if user.Msisdn.Valid {
-		dto.Msisdn = &user.Msisdn.String
-	}
-
-	if user.ImageUrl.Valid {
-		dto.ImageUrl = &user.ImageUrl.String
-	}
-
-	if user.Gender.Valid {
-		dto.Gender = &user.Gender.String
+	dto := &authdto.ResponseUserDTO{
+		ID:       user.ID,
+		Email:    user.Email,
+		Name:     user.Name,
+		Msisdn:   user.Msisdn,
+		ImageUrl: user.ImageUrl,
+		Gender:   user.Gender,
 	}
 
 	return dto

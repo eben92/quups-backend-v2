@@ -1,6 +1,6 @@
 package authdto
 
-type UserDTO struct {
+type ResponseUserDTO struct {
 	ID       string  `json:"id"`
 	Email    string  `json:"email"`
 	Name     *string `json:"name"`

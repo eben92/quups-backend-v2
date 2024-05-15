@@ -151,13 +151,13 @@ func (s *Service) FindByEmail(e string) (*userdto.UserInternalDTO, error) {
 	if err != nil {
 		log.Printf("error fetching user with email [%s] error: [%s]", e, err.Error())
 
-		return nil, err
+		return nil, fmt.Errorf("no user found")
 	}
 
 	if u.ID == "" {
 		log.Printf("user with email [%s] does not exist", e)
 
-		return nil, nil
+		return nil, fmt.Errorf("no user found")
 	}
 
 	user = mapToUserInternalDTO(u)
@@ -175,13 +175,13 @@ func (s *Service) FindByID(id string) (*userdto.UserInternalDTO, error) {
 	if err != nil {
 		log.Printf("error fetching user with ID [%s] error: [%s]", id, err.Error())
 
-		return nil, err
+		return nil, fmt.Errorf("no user found")
 	}
 
 	if u.ID == "" {
 		log.Printf("user with id [%s] does not exist", id)
 
-		return nil, nil
+		return nil, fmt.Errorf("no user found")
 	}
 
 	user = mapToUserInternalDTO(u)
@@ -191,7 +191,14 @@ func (s *Service) FindByID(id string) (*userdto.UserInternalDTO, error) {
 }
 
 func (s *Service) FindByMsisdn(msisdn string) (*userdto.UserInternalDTO, error) {
-	log.Printf("fetching user with msisdn [%s]\n\n", msisdn)
+	log.Printf("fetching user with msisdn [%s]", msisdn)
+
+	if msisdn == "" {
+		log.Printf("no msisdn provided")
+
+		return nil, fmt.Errorf("Phone number is required")
+	}
+
 	var user *userdto.UserInternalDTO
 
 	u, err := s.repo.GetUserByMsisdn(s.ctx, sql.NullString{
@@ -202,13 +209,13 @@ func (s *Service) FindByMsisdn(msisdn string) (*userdto.UserInternalDTO, error) 
 	if err != nil {
 		log.Printf("error fetching user with msisdn [%s] error: [%s]", msisdn, err.Error())
 
-		return nil, err
+		return nil, fmt.Errorf("no user found")
 	}
 
 	if u.ID == "" {
 		log.Printf("user with msisdn [%s] does not exist", msisdn)
 
-		return nil, nil
+		return nil, fmt.Errorf("no user found.")
 	}
 
 	user = mapToUserInternalDTO(u)

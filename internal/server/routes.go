@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	authservice "quups-backend/internal/services/auth-service/service"
+	authcontroller "quups-backend/internal/services/auth-service/controller"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -25,7 +25,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 }
 
 func (s *Server) authController(r chi.Router) {
-	h := authservice.New(s.repository)
+	h := authcontroller.New(s.repository)
 
 	r.Post("/signin", h.Signin)
 	r.Post("/signup", h.Signup)
