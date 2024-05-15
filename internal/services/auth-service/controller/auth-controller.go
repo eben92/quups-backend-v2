@@ -62,6 +62,8 @@ func (s *Controller) Signin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// set access token as cookie
+
 	res, _ := response.WrapInApiResponse(&utils.ApiResponseParams{
 		StatusCode: http.StatusOK,
 		Results:    &user,
