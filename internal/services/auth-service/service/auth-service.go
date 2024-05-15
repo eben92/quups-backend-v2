@@ -2,15 +2,12 @@ package authservice
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"quups-backend/internal/database/repository"
 	authdto "quups-backend/internal/services/auth-service/dto"
 	userdto "quups-backend/internal/services/user-service/dto"
 	userservice "quups-backend/internal/services/user-service/service"
-	"quups-backend/internal/utils"
 )
 
 const (
@@ -46,72 +43,20 @@ func (s *Service) SigninHandler(body *authdto.SignInRequestDTO) (*authdto.Respon
 	return user, nil
 }
 
-func (s *Service) Signup(w http.ResponseWriter, r *http.Request) {
-
-	var body *userdto.CreateUserParams
-	var user *userdto.UserInternalDTO
-
-	util := utils.New(w, r)
-	uService := userservice.New(r.Context(), s.repo)
-
-	err := json.NewDecoder(r.Body).Decode(&body)
-	defer r.Body.Close()
-
-	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-
-		res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
-			Results:    nil,
-			StatusCode: http.StatusBadRequest,
-			Message:    err.Error(),
-		})
-
-		_, _ = w.Write(res)
-		return
-	}
-
-	// check to see if email or msisdn already exists and throw error  if it does
-
-	// if body.Email == nil {
-	// 	log.Println(emailErr)
-
-	// 	w.WriteHeader(http.StatusBadRequest)
-	// 	res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
-	// 		Results:    nil,
-	// 		StatusCode: http.StatusBadRequest,
-	// 		Message:    emailErr,
-	// 	})
-
-	// 	_, _ = w.Write(res)
-	// 	return
-
-	// }
+func (s *Service) SignupHandler(body *userdto.CreateUserParams) (*authdto.ResponseUserDTO, error) {
+	uService := userservice.New(s.ctx, s.repo)
 
 	//create user and generate jwt signed token
+	u, err := uService.Create(body)
+
 	// send the signed token in both the request body and append it to the browser cookie
-
-	//  save user in db
-
-	user, err = uService.Create(body)
-
 	if err != nil {
-		res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
-			Results:    nil,
-			StatusCode: http.StatusBadRequest,
-			Message:    err.Error(),
-		})
-
-		_, _ = w.Write(res)
-		return
+		return nil, fmt.Errorf("incorrect phone number or password")
 	}
 
-	res, _ := util.WrapInApiResponse(&utils.ApiResponseParams{
-		Results:    user,
-		StatusCode: http.StatusOK,
-		Message:    "user created successfully",
-	})
+	user := mapToUserDTO(u)
 
-	_, _ = w.Write(res)
+	return user, nil
 }
 
 func mapToUserDTO(user *userdto.UserInternalDTO) *authdto.ResponseUserDTO {
