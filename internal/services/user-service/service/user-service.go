@@ -10,6 +10,8 @@ import (
 	userdto "quups-backend/internal/services/user-service/dto"
 	"quups-backend/internal/utils"
 	"strings"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Service struct {
@@ -110,8 +112,18 @@ func (s *Service) createUserParams(body *userdto.CreateUserParams) (*model.Creat
 
 	if body.Password != "" {
 
-		// todo: hash password here
-		p.Password.String = body.Password
+		if len(body.Password) < 4 {
+			log.Printf("user entered an invalid password < 4 msisdn: [%s]", body.Msisdn)
+			return nil, fmt.Errorf("password should be atleast 6 characters")
+		}
+
+		hashpass, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
+
+		if err != nil {
+			return nil, fmt.Errorf("Something went wrong. Please try again. #1")
+		}
+
+		p.Password.String = string(hashpass)
 		p.Password.Valid = true
 	}
 

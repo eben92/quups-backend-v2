@@ -8,13 +8,12 @@ import (
 	authdto "quups-backend/internal/services/auth-service/dto"
 	userdto "quups-backend/internal/services/user-service/dto"
 	userservice "quups-backend/internal/services/user-service/service"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
 const (
-	emailErr    = "Email is required"
-	nameErr     = "Name is required"
-	enErr       = "Email and name is required"
-	msisdnTaken = "Phone number already in use."
+	incorrectpass = "incorrect phone number or password"
 )
 
 type Service struct {
@@ -35,7 +34,11 @@ func (s *Service) SigninHandler(body *authdto.SignInRequestDTO) (*authdto.Respon
 	u, err := uService.FindByMsisdn(body.Msisdn)
 
 	if err != nil {
-		return nil, fmt.Errorf("incorrect phone number or password")
+		return nil, fmt.Errorf(incorrectpass)
+	}
+
+	if !isPasswordMatch(body.Password, *u.Password) {
+		return nil, fmt.Errorf(incorrectpass)
 	}
 
 	user := mapToUserDTO(u)
@@ -72,4 +75,16 @@ func mapToUserDTO(user *userdto.UserInternalDTO) *authdto.ResponseUserDTO {
 
 	return dto
 
+}
+
+func isPasswordMatch(rawpass, hashpass string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashpass), []byte(rawpass))
+
+	return err == nil
+
+}
+
+func genereteJWT() ([]byte, error) {
+
+	return nil, nil
 }
