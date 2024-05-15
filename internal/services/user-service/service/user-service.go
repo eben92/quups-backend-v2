@@ -8,6 +8,8 @@ import (
 	"quups-backend/internal/database/repository"
 	model "quups-backend/internal/database/repository"
 	userdto "quups-backend/internal/services/user-service/dto"
+	"quups-backend/internal/utils"
+	"strings"
 )
 
 type Service struct {
@@ -54,15 +56,32 @@ func (s *Service) TestCreate(body *userdto.CreateUserParams) (*model.CreateUserP
 
 func (s *Service) createUserParams(body *userdto.CreateUserParams) (*model.CreateUserParams, error) {
 
-	if body.Name == "" || body.Email == "" {
-		return nil, fmt.Errorf("user name and email is required")
+	if body.Email == "" || body.Msisdn == "" {
+		return nil, fmt.Errorf("email and phone number is required")
 	}
-	log.Printf("setting up params to create user with name and email: [%s] [%s]", body.Name, body.Email)
+
+	log.Printf("setting up params to create user with name, email and msisdn: [%s] [%s] [%s]", body.Name, body.Email, body.Msisdn)
+
+	if len(strings.TrimSpace(body.Name)) < 3 {
+		return nil, fmt.Errorf("full name must be at least 5 characters.")
+	}
+
+	if !utils.IsVaildEmail(body.Email) {
+		return nil, fmt.Errorf("invalid email address.")
+	}
+
+	if !utils.IsValidMsisdn(body.Msisdn) {
+		return nil, fmt.Errorf("invalid phone number.")
+	}
 
 	p := &model.CreateUserParams{
 		Email: body.Email,
 		Name: sql.NullString{
 			String: body.Name,
+			Valid:  true,
+		},
+		Msisdn: sql.NullString{
+			String: body.Msisdn,
 			Valid:  true,
 		},
 	}
@@ -79,22 +98,14 @@ func (s *Service) createUserParams(body *userdto.CreateUserParams) (*model.Creat
 		p.Gender.Valid = true
 	}
 
-	if body.Msisdn != "" {
+	u, _ = s.repo.GetUserByMsisdn(s.ctx, sql.NullString{
+		String: body.Msisdn,
+		Valid:  true,
+	})
 
-		// TODO: validate phone number
-
-		u, _ := s.repo.GetUserByMsisdn(s.ctx, sql.NullString{
-			String: body.Msisdn,
-			Valid:  true,
-		})
-
-		if u.ID != "" {
-			log.Printf("User with msisdn [%s] already exist", body.Msisdn)
-			return nil, fmt.Errorf("Phone number [%s] already in use", body.Msisdn)
-		}
-
-		p.Msisdn.String = body.Msisdn
-		p.Msisdn.Valid = true
+	if u.ID != "" {
+		log.Printf("User with msisdn [%s] already exist", body.Msisdn)
+		return nil, fmt.Errorf("Phone number [%s] already in use", body.Msisdn)
 	}
 
 	if body.Password != "" {
@@ -134,6 +145,8 @@ func (s *Service) Create(body *userdto.CreateUserParams) (*userdto.UserInternalD
 	}
 
 	user = mapToUserInternalDTO(u)
+
+	log.Printf("new user created successfully -- email: [%s]", params.Email)
 
 	return user, nil
 }

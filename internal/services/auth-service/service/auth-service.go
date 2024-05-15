@@ -51,7 +51,7 @@ func (s *Service) SignupHandler(body *userdto.CreateUserParams) (*authdto.Respon
 
 	// send the signed token in both the request body and append it to the browser cookie
 	if err != nil {
-		return nil, fmt.Errorf("incorrect phone number or password")
+		return nil, err
 	}
 
 	user := mapToUserDTO(u)

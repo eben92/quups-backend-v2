@@ -42,8 +42,10 @@ func String(s string) *string {
 	return &s
 }
 
-func ValidateMsisdn(s string) {
-	// TODO
+func IsValidMsisdn(msisdn string) bool {
+
+	// TODO:
+	return true
 }
 
 func IsVaildEmail(e string) bool {
