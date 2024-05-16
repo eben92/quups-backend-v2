@@ -3,25 +3,18 @@ package authservice
 import (
 	"context"
 	"fmt"
-	"log"
-	"os"
-	"time"
 
 	"quups-backend/internal/database/repository"
 	authdto "quups-backend/internal/services/auth-service/dto"
 	userdto "quups-backend/internal/services/user-service/dto"
 	userservice "quups-backend/internal/services/user-service/service"
+	local_jwt "quups-backend/internal/utils/jwt"
 
-	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
 const (
 	incorrectpass = "incorrect phone number or password"
-)
-
-var (
-	JWT_SECRET = os.Getenv("JWT_SECRET")
 )
 
 type Service struct {
@@ -73,7 +66,7 @@ func (s *Service) SignupHandler(body *userdto.CreateUserParams) (*authdto.Respon
 
 func mapToUserDTO(user *userdto.UserInternalDTO) (*authdto.ResponseUserDTO, error) {
 
-	t, err := genereteJWT(user.ID, *user.Name)
+	t, err := local_jwt.GenereteJWT(user.ID, *user.Name)
 	if err != nil {
 		return nil, err
 	}
@@ -105,25 +98,25 @@ func isPasswordMatch(rawpass, hashpass string) bool {
 Generetes a signed token and return as byte or nil.
 Convert to string before sending to client
 */
-func genereteJWT(ID, name string) ([]byte, error) {
+// func genereteJWT(ID, name string) ([]byte, error) {
 
-	// Create a new token object, specifying signing method and the claims
-	// you would like it to contain.
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":    ID,
-		"issuer": "WEB",
-		"name":   name,
-		"exp":    time.Now().Add(time.Hour * 24 * 30).Unix(),
-	})
+// 	// Create a new token object, specifying signing method and the claims
+// 	// you would like it to contain.
+// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+// 		"sub":    ID,
+// 		"issuer": "WEB",
+// 		"name":   name,
+// 		"exp":    time.Now().Add(time.Hour * 24 * 30).Unix(),
+// 	})
 
-	// Sign and get the complete encoded token as a string using the secret
-	tokenString, err := token.SignedString([]byte(JWT_SECRET))
+// 	// Sign and get the complete encoded token as a string using the secret
+// 	tokenString, err := token.SignedString([]byte(JWT_SECRET))
 
-	if err != nil {
-		log.Printf("Error signing jwt [%s]", err.Error())
+// 	if err != nil {
+// 		log.Printf("Error signing jwt [%s]", err.Error())
 
-		return nil, fmt.Errorf("Something went wrong. Please try again. #2")
-	}
+// 		return nil, fmt.Errorf("Something went wrong. Please try again. #2")
+// 	}
 
-	return []byte(tokenString), nil
-}
+// 	return []byte(tokenString), nil
+// }

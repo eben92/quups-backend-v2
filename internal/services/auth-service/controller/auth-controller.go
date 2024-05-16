@@ -11,6 +11,7 @@ import (
 	authservice "quups-backend/internal/services/auth-service/service"
 	userdto "quups-backend/internal/services/user-service/dto"
 	"quups-backend/internal/utils"
+	local_jwt "quups-backend/internal/utils/jwt"
 )
 
 type Controller struct {
@@ -64,7 +65,6 @@ func (s *Controller) Signin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	access_token := user.AccessToken
-	// set access token as cookie
 	setCookie(w, *access_token)
 
 	res, _ := response.WrapInApiResponse(&utils.ApiResponseParams{
@@ -117,7 +117,7 @@ func (s *Controller) Signup(w http.ResponseWriter, r *http.Request) {
 
 	res, _ := response.WrapInApiResponse(&utils.ApiResponseParams{
 		StatusCode: http.StatusCreated,
-		Results:    &user,
+		Results:    &user, //TODO: shoudld we take this out?
 		Message:    success,
 	})
 
@@ -127,13 +127,13 @@ func (s *Controller) Signup(w http.ResponseWriter, r *http.Request) {
 
 func setCookie(w http.ResponseWriter, t string) {
 	cookie := &http.Cookie{
-		Name:     "jwt",
+		Name:     local_jwt.COOKIE_NAME,
 		Value:    t,
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
 		HttpOnly: true,
 		Expires:  time.Now().Add(time.Hour * 24 * 30),
-		Domain:   ".quups.app",
+		// Domain:   "*",
 	}
 
 	http.SetCookie(w, cookie)
