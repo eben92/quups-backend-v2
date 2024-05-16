@@ -227,6 +227,13 @@ func (s *Service) FindByMsisdn(msisdn string) (*userdto.UserInternalDTO, error) 
 	}
 
 	var user *userdto.UserInternalDTO
+	msisdn, isValidMsisdn := utils.IsValidMsisdn(msisdn)
+
+	if !isValidMsisdn {
+		log.Printf("error fetching user -- invalid msisdn [%s]", msisdn)
+
+		return nil, fmt.Errorf("Invalid phone number")
+	}
 
 	u, err := s.repo.GetUserByMsisdn(s.ctx, sql.NullString{
 		String: msisdn,
@@ -246,6 +253,7 @@ func (s *Service) FindByMsisdn(msisdn string) (*userdto.UserInternalDTO, error) 
 	}
 
 	user = mapToUserInternalDTO(u)
+	log.Printf("user with msisdn [%s] found", msisdn)
 
 	return user, nil
 

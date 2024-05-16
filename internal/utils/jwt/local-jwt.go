@@ -39,6 +39,7 @@ var (
 	ErrAlgoInvalid  = errors.New("algorithm mismatch")
 )
 
+// Authenticator is a middleware that handles jwt authentications
 func Authenticator() func(http.Handler) http.Handler {
 
 	return func(next http.Handler) http.Handler {

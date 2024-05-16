@@ -3,6 +3,7 @@ package authservice
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"quups-backend/internal/database/repository"
 	authdto "quups-backend/internal/services/auth-service/dto"
@@ -40,6 +41,7 @@ func (s *Service) SigninHandler(body *authdto.SignInRequestDTO) (*authdto.Respon
 	}
 
 	if !isPasswordMatch(body.Password, *u.Password) {
+		log.Printf("incorrect password for [%s]", body.Msisdn)
 		return nil, fmt.Errorf(incorrectpass)
 	}
 
