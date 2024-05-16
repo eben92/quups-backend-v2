@@ -72,7 +72,9 @@ func (s *Service) createUserParams(body *userdto.CreateUserParams) (*model.Creat
 		return nil, fmt.Errorf("invalid email address.")
 	}
 
-	if !utils.IsValidMsisdn(body.Msisdn) {
+	msisdn, isValidMsisdn := utils.IsValidMsisdn(body.Msisdn)
+
+	if !isValidMsisdn {
 		return nil, fmt.Errorf("invalid phone number.")
 	}
 
@@ -83,7 +85,7 @@ func (s *Service) createUserParams(body *userdto.CreateUserParams) (*model.Creat
 			Valid:  true,
 		},
 		Msisdn: sql.NullString{
-			String: body.Msisdn,
+			String: msisdn,
 			Valid:  true,
 		},
 	}

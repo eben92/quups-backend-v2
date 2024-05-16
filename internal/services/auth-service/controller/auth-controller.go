@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
 	"quups-backend/internal/database/repository"
 	authdto "quups-backend/internal/services/auth-service/dto"
@@ -62,7 +63,9 @@ func (s *Controller) Signin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	access_token := user.AccessToken
 	// set access token as cookie
+	setCookie(w, *access_token)
 
 	res, _ := response.WrapInApiResponse(&utils.ApiResponseParams{
 		StatusCode: http.StatusOK,
@@ -109,6 +112,9 @@ func (s *Controller) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO:
+	// add OTP and redirect user to confirm their phone number
+
 	res, _ := response.WrapInApiResponse(&utils.ApiResponseParams{
 		StatusCode: http.StatusCreated,
 		Results:    &user,
@@ -116,5 +122,20 @@ func (s *Controller) Signup(w http.ResponseWriter, r *http.Request) {
 	})
 
 	_, _ = w.Write(res)
+
+}
+
+func setCookie(w http.ResponseWriter, t string) {
+	cookie := &http.Cookie{
+		Name:     "jwt",
+		Value:    t,
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode,
+		HttpOnly: true,
+		Expires:  time.Now().Add(time.Hour * 24 * 30),
+		Domain:   ".quups.app",
+	}
+
+	http.SetCookie(w, cookie)
 
 }
