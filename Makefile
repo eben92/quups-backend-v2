@@ -70,7 +70,8 @@ watch:
 
 schema:
 	@echo "Generating schema..."
-	@goose -dir $(GOOSE_MIGRATION_DIR) create new sql  
+	@read -p "Enter schema name: " schema_name; \
+	goose -dir $(GOOSE_MIGRATION_DIR) create $$schema_name sql  
 	@echo "Generated!"
 
 sqlc: 
