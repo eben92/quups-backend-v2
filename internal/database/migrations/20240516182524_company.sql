@@ -93,6 +93,7 @@ ALTER TABLE "working_hours"
     ADD FOREIGN KEY ("company_id")
     REFERENCES "companies" ("id");
 
+
 CREATE TABLE IF NOT EXISTS payment_accounts (
     id  VARCHAR(150) PRIMARY KEY DEFAULT gen_random_uuid(),
     account_type VARCHAR(50) NOT NULL DEFAULT 'mobile_money',
@@ -142,7 +143,8 @@ CREATE INDEX ON "payout_accounts" ("id_int");
 
 ALTER TABLE "payout_accounts"
     ADD FOREIGN KEY ("payment_account_id")
-    REFERENCES "payment_accounts" ("id");
+    REFERENCES "payment_accounts" ("id")
+    ON DELETE CASCADE;
 
 CREATE TABLE IF NOT EXISTS payment_account_details (
     id VARCHAR(150) PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -170,7 +172,8 @@ CREATE INDEX ON "payment_account_details" ("id_int");
 
 ALTER TABLE "payment_account_details"
     ADD FOREIGN KEY ("payment_account_id")
-    REFERENCES "payment_accounts" ("id");
+    REFERENCES "payment_accounts" ("id")
+    ON DELETE CASCADE;
 
 -- +goose StatementEnd
 
