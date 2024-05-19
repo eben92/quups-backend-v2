@@ -12,7 +12,7 @@ import (
 )
 
 func (s *Service) createCompanyParams(body *userdto.CreateCompanyParams) (*model.CreateCompanyParams, error) {
-	cid := utils.GenerateID(6)
+
 	auth_user := local_jwt.GetAuthContext(s.ctx)
 
 	if body.Email == "" || body.Msisdn == "" || body.Name == "" {
@@ -37,7 +37,7 @@ func (s *Service) createCompanyParams(body *userdto.CreateCompanyParams) (*model
 	log.Printf("setting up params to create a new company with name: [%s], email: [%s], msisdn: [%s], by: [%s]", body.Name, body.Email, body.Msisdn, auth_user.Sub)
 
 	p := &model.CreateCompanyParams{
-		ID:           cid,
+		ID:           utils.GenerateIntID(6),
 		Email:        body.Email,
 		Name:         *cname,
 		Msisdn:       msisdn,
@@ -59,7 +59,7 @@ func (s *Service) createCompanyParams(body *userdto.CreateCompanyParams) (*model
 		log.Printf("company id already exist. used by [%s] - [%s]", c.Name, c.ID)
 		log.Println("generating new company id")
 
-		p.ID = utils.GenerateID(6)
+		p.ID = utils.GenerateIntID(6)
 
 		log.Printf("new company id generated [%s]", p.ID)
 	}
@@ -99,11 +99,11 @@ func (s *Service) CreateCompany(body *userdto.CreateCompanyParams) (*userdto.Com
 
 }
 
-func mapToCompanyInternalDTO(user model.CreateCompanyParams) *userdto.CompanyInternalDTO {
+func mapToCompanyInternalDTO(c model.CreateCompanyParams) *userdto.CompanyInternalDTO {
 
 	dto := &userdto.CompanyInternalDTO{
-		ID:    user.ID,
-		Email: user.Email,
+		ID:    c.ID,
+		Email: c.Email,
 	}
 
 	return dto

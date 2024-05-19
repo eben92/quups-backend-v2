@@ -3,8 +3,11 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"log"
 	"net/mail"
 	"strings"
+
+	"github.com/aidarkhanov/nanoid"
 )
 
 const (
@@ -69,9 +72,17 @@ func IsVaildEmail(e string) bool {
 	return err == nil
 }
 
-func GenerateID(size int) string {
+// GenerateIntID generates random string from 0-9 based on size
+func GenerateIntID(size int) string {
+	dv := "0123456789"
 
-	return ""
+	id, err := nanoid.Generate(dv, size)
+
+	if err != nil {
+		log.Printf("error generating company id [%s]", err.Error())
+	}
+
+	return id
 }
 
 // IsValidCompanyName returns a slice of the string s and a bool,
