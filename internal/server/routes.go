@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	authcontroller "quups-backend/internal/services/auth-service/controller"
+	usercontroller "quups-backend/internal/services/user-service/controller"
 	local_jwt "quups-backend/internal/utils/jwt"
 
 	"github.com/go-chi/chi/v5"
@@ -31,8 +32,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 
 	// protected routes
 	r.Group(func(pr chi.Router) {
-
 		pr.Use(local_jwt.Authenticator())
+
+		pr.Route("/companies", s.userController)
 		pr.Get("/health", s.healthHandler)
 	})
 
@@ -40,10 +42,16 @@ func (s *Server) RegisterRoutes() http.Handler {
 }
 
 func (s *Server) authController(r chi.Router) {
-	h := authcontroller.New(s.repository)
+	handler := authcontroller.New(s.repository)
 
-	r.Post("/signin", h.Signin)
-	r.Post("/signup", h.Signup)
+	r.Post("/signin", handler.Signin)
+	r.Post("/signup", handler.Signup)
+}
+
+func (s *Server) userController(r chi.Router) {
+	handler := usercontroller.New(s.repository)
+
+	r.Post("/create", handler.CreateCompany)
 }
 
 func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
