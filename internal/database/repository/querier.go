@@ -10,7 +10,7 @@ import (
 )
 
 type Querier interface {
-	AddEmployee(ctx context.Context, arg AddEmployeeParams) (CompanyEmployee, error)
+	AddMember(ctx context.Context, arg AddMemberParams) (Member, error)
 	// WORKING HOURS
 	AddWorkingHour(ctx context.Context, arg AddWorkingHourParams) (WorkingHour, error)
 	CreateCompany(ctx context.Context, arg CreateCompanyParams) (Company, error)
@@ -25,19 +25,20 @@ type Querier interface {
 	DeleteCompany(ctx context.Context, id string) error
 	GetCompanyByID(ctx context.Context, id string) (Company, error)
 	GetConfigurationByCompanyID(ctx context.Context, companyID string) (Configuration, error)
-	GetEmployeesByCompanyID(ctx context.Context, arg GetEmployeesByCompanyIDParams) ([]CompanyEmployee, error)
+	GetMembersByCompanyID(ctx context.Context, arg GetMembersByCompanyIDParams) ([]Member, error)
 	GetPaymentAccountByCompanyID(ctx context.Context, companyID string) (PaymentAccount, error)
 	GetPaymentAccountDetailsByPaymentAccountID(ctx context.Context, paymentAccountID string) (PaymentAccountDetail, error)
 	GetPayoutAccountByPaymentAccountID(ctx context.Context, paymentAccountID string) (PayoutAccount, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id string) (User, error)
 	GetUserByMsisdn(ctx context.Context, msisdn sql.NullString) (User, error)
+	GetUserTeams(ctx context.Context, userID sql.NullString) ([]GetUserTeamsRow, error)
 	GetUsers(ctx context.Context) ([]User, error)
 	GetWorkingHoursByCompanyID(ctx context.Context, companyID string) ([]WorkingHour, error)
 	UpdateCompany(ctx context.Context, arg UpdateCompanyParams) (Company, error)
 	UpdateConfiguationByCompanyID(ctx context.Context, arg UpdateConfiguationByCompanyIDParams) (Configuration, error)
-	UpdateEmployee(ctx context.Context, arg UpdateEmployeeParams) (CompanyEmployee, error)
-	UpdateEmployeeInvitationStatus(ctx context.Context, arg UpdateEmployeeInvitationStatusParams) (CompanyEmployee, error)
+	UpdateMember(ctx context.Context, arg UpdateMemberParams) (Member, error)
+	UpdateMemberInvitationStatus(ctx context.Context, arg UpdateMemberInvitationStatusParams) (Member, error)
 	UpdatePaymentAccountByCompanyID(ctx context.Context, arg UpdatePaymentAccountByCompanyIDParams) (PaymentAccount, error)
 	UpdatePaymentAccountDetailsByPaymentAccountID(ctx context.Context, arg UpdatePaymentAccountDetailsByPaymentAccountIDParams) (PaymentAccountDetail, error)
 	UpdatePayoutAccountByPaymentAccountID(ctx context.Context, arg UpdatePayoutAccountByPaymentAccountIDParams) (PayoutAccount, error)

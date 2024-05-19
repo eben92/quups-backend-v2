@@ -28,7 +28,7 @@ ALTER TABLE "companies"
     ADD FOREIGN KEY ("owner_id")
     REFERENCES "users" ("id");
 
-CREATE TABLE IF NOT EXISTS company_employees (
+CREATE TABLE IF NOT EXISTS members (
     id  VARCHAR(150) PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(50) NOT NULL,
     msisdn VARCHAR(15) NOT NULL,
@@ -43,16 +43,16 @@ CREATE TABLE IF NOT EXISTS company_employees (
 );
 
 
-CREATE UNIQUE INDEX ON "company_employees" ("msisdn", "company_id");
+CREATE UNIQUE INDEX ON "members" ("msisdn", "company_id");
 
 -- TODO: write test for this;
--- CREATE UNIQUE INDEX ON "company_employees" ("user_id", "company_id");
+-- CREATE UNIQUE INDEX ON "members" ("user_id", "company_id");
 
-ALTER TABLE "company_employees"
+ALTER TABLE "members"
     ADD FOREIGN KEY ("company_id")
     REFERENCES "companies" ("id");
 
-ALTER TABLE "company_employees"
+ALTER TABLE "members"
     ADD FOREIGN KEY ("user_id")
     REFERENCES "users" ("id");
 
@@ -179,7 +179,7 @@ ALTER TABLE "payment_account_details"
 
 -- +goose Down
 -- +goose StatementBegin
-DROP TABLE company_employees;
+DROP TABLE members;
 DROP TABLE configurations;
 DROP TABLE working_hours;
 DROP TABLE payout_accounts;

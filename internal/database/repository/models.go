@@ -66,7 +66,18 @@ type Company struct {
 	UpdatedAt      time.Time      `json:"updated_at"`
 }
 
-type CompanyEmployee struct {
+type Configuration struct {
+	ID              string    `json:"id"`
+	Delivery        bool      `json:"delivery"`
+	Pickup          bool      `json:"pickup"`
+	CashOnDelivery  bool      `json:"cash_on_delivery"`
+	DigitalPayments bool      `json:"digital_payments"`
+	CompanyID       string    `json:"company_id"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+type Member struct {
 	ID        string         `json:"id"`
 	Name      string         `json:"name"`
 	Msisdn    string         `json:"msisdn"`
@@ -77,17 +88,6 @@ type CompanyEmployee struct {
 	UserID    sql.NullString `json:"user_id"`
 	CreatedAt time.Time      `json:"created_at"`
 	UpdatedAt time.Time      `json:"updated_at"`
-}
-
-type Configuration struct {
-	ID              string    `json:"id"`
-	Delivery        bool      `json:"delivery"`
-	Pickup          bool      `json:"pickup"`
-	CashOnDelivery  bool      `json:"cash_on_delivery"`
-	DigitalPayments bool      `json:"digital_payments"`
-	CompanyID       string    `json:"company_id"`
-	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 type PaymentAccount struct {
