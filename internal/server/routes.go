@@ -51,7 +51,7 @@ func (s *Server) authController(r chi.Router) {
 func (s *Server) userController(r chi.Router) {
 	handler := usercontroller.New(s.repository)
 
-	r.Post("/create", handler.CreateCompany)
+	r.Post("/", handler.CreateCompany)
 }
 
 func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {

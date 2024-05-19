@@ -13,12 +13,12 @@ type CreateCompanyParams struct {
 	Email          string
 	Msisdn         string
 	About          string
-	ImageUrl       string
-	BannerUrl      string
+	ImageUrl       string `json:"image_url"`
+	BannerUrl      string `json:"banner_url"`
 	Tin            string
-	BrandType      string
+	BrandType      string `json:"brand_type"`
 	OwnerID        string
-	CurrencyCode   string
-	InvitationCode string
+	CurrencyCode   string `json:"currency_code"`
+	InvitationCode string `json:"invitation_code"`
 	Slug           string
 }

@@ -34,7 +34,7 @@ func (s *Service) createCompanyParams(body *userdto.CreateCompanyParams) (*model
 		return nil, invalidMsisdnErr
 	}
 
-	log.Printf("setting up params to create a new company with name: [%s], email: [%s], msisdn: [%s], by: [%s]", body.Name, body.Email, body.Msisdn, body.OwnerID)
+	log.Printf("setting up params to create a new company with name: [%s], email: [%s], msisdn: [%s], by: [%s]", body.Name, body.Email, body.Msisdn, auth_user.Sub)
 
 	p := &model.CreateCompanyParams{
 		ID:           cid,
