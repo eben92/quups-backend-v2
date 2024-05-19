@@ -55,13 +55,13 @@ func (s *Service) createUserParams(body *userdto.CreateUserParams) (*model.Creat
 	}
 
 	if !utils.IsVaildEmail(body.Email) {
-		return nil, fmt.Errorf("invalid email address.")
+		return nil, invalidEmailErr
 	}
 
 	msisdn, isValidMsisdn := utils.IsValidMsisdn(body.Msisdn)
 
 	if !isValidMsisdn {
-		return nil, fmt.Errorf("invalid phone number.")
+		return nil, invalidMsisdnErr
 	}
 
 	p := &model.CreateUserParams{

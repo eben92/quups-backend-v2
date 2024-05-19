@@ -2,6 +2,7 @@ package userservice
 
 import (
 	"context"
+	"errors"
 	"quups-backend/internal/database/repository"
 )
 
@@ -16,3 +17,17 @@ func New(c context.Context, r *repository.Queries) *Service {
 		ctx:  c,
 	}
 }
+
+const (
+	FOOD    string = "FOOD"
+	FASHION string = "FASHION"
+)
+
+var BRAND_TYPES = []string{FOOD, FASHION}
+
+var (
+	invalidEmailErr     = errors.New("invalid email address.")
+	invalidMsisdnErr    = errors.New("invalid phone number.")
+	invalidNameErr      = errors.New("name must be greater the 3 characters and excluding any special characters.")
+	invalidBrandTypeErr = errors.New("invalid brand type. expecting " + FOOD + " or " + FASHION)
+)
