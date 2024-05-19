@@ -1,11 +1,9 @@
 package userservice
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"log"
-	"quups-backend/internal/database/repository"
 	model "quups-backend/internal/database/repository"
 	userdto "quups-backend/internal/services/user-service/dto"
 	"quups-backend/internal/utils"
@@ -13,18 +11,6 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 )
-
-type Service struct {
-	repo *repository.Queries
-	ctx  context.Context
-}
-
-func New(c context.Context, r *repository.Queries) *Service {
-	return &Service{
-		repo: r,
-		ctx:  c,
-	}
-}
 
 func (s *Service) TestCreate(body *userdto.CreateUserParams) (*model.CreateUserParams, error) {
 
