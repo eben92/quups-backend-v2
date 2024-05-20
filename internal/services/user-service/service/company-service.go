@@ -2,6 +2,7 @@ package userservice
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	model "quups-backend/internal/database/repository"
 	userdto "quups-backend/internal/services/user-service/dto"
@@ -41,7 +42,7 @@ func (s *Service) createCompanyParams(body *userdto.CreateCompanyParams) (*model
 		Email:        body.Email,
 		Name:         *cname,
 		Msisdn:       msisdn,
-		Slug:         strings.ToLower(body.Name),
+		Slug:         strings.ToLower(strings.ReplaceAll(*cname, " ", "-")),
 		CurrencyCode: "GHS",
 		IsActive:     false,
 		OwnerID:      auth_user.Sub,
@@ -135,12 +136,30 @@ func (s *Service) GetAllCompanies() ([]userdto.CompanyInternalDTO, error) {
 
 func (s *Service) GetCompanyByName(name string) (*userdto.CompanyInternalDTO, error) {
 
-	return nil, nil
+	res, err := s.repo.GetCompanyByName(s.ctx, name)
+
+	if err != nil {
+		log.Printf("error fetching company with name: [%s]", err.Error())
+		return nil, fmt.Errorf("company with name: [%s] not found", name)
+	}
+
+	c := mapToCompanyInternalDTO(res)
+
+	return c, nil
 }
 
 func (s *Service) GetCompanyByID(id string) (*userdto.CompanyInternalDTO, error) {
 
-	return nil, nil
+	res, err := s.repo.GetCompanyByID(s.ctx, id)
+
+	if err != nil {
+		log.Printf("error fetching company with id [%s]", err.Error())
+		return nil, fmt.Errorf("company with id [%s] not found", id)
+	}
+
+	c := mapToCompanyInternalDTO(res)
+
+	return c, nil
 }
 
 func mapToCompanyInternalDTO(c model.Company) *userdto.CompanyInternalDTO {

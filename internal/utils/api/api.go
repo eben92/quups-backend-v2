@@ -26,13 +26,15 @@ func New(w http.ResponseWriter, r *http.Request) *Response {
 
 }
 
-func (r *Response) WrapInApiResponse(data *ApiResponseParams) ([]byte, error) {
+func (r *Response) WrapInApiResponse(data *ApiResponseParams) {
 	r.w.WriteHeader(data.StatusCode)
 
-	return json.Marshal(&ApiResponseParams{
+	res, _ := json.Marshal(&ApiResponseParams{
 		Results:    data.Results,
 		StatusCode: data.StatusCode,
 		Message:    data.Message,
 		Path:       r.req.URL.Path,
 	})
+
+	_, _ = r.w.Write(res)
 }

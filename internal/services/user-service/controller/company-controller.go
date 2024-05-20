@@ -7,10 +7,12 @@ import (
 	userdto "quups-backend/internal/services/user-service/dto"
 	userservice "quups-backend/internal/services/user-service/service"
 	apiutils "quups-backend/internal/utils/api"
+
+	"github.com/go-chi/chi/v5"
 )
 
 // POST: /companies
-func (c *UserController) CreateCompany(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) CreateCompany(w http.ResponseWriter, r *http.Request) {
 	var body *userdto.CreateCompanyParams
 	uservice := userservice.New(r.Context(), c.repo)
 	response := apiutils.New(w, r)
@@ -21,12 +23,11 @@ func (c *UserController) CreateCompany(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("error decoding create company request body")
 
-		res, _ := response.WrapInApiResponse(&apiutils.ApiResponseParams{
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
 			StatusCode: http.StatusBadRequest,
 			Results:    nil,
 			Message:    err.Error(),
 		})
-		_, _ = w.Write(res)
 		return
 	}
 
@@ -34,26 +35,24 @@ func (c *UserController) CreateCompany(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 
-		res, _ := response.WrapInApiResponse(&apiutils.ApiResponseParams{
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
 			StatusCode: http.StatusBadRequest,
 			Results:    nil,
 			Message:    err.Error(),
 		})
-		_, _ = w.Write(res)
 		return
 	}
 
-	res, _ := response.WrapInApiResponse(&apiutils.ApiResponseParams{
+	response.WrapInApiResponse(&apiutils.ApiResponseParams{
 		StatusCode: http.StatusCreated,
 		Results:    &newc,
 		Message:    "success",
 	})
-	_, _ = w.Write(res)
 
 }
 
 // GET: /companies
-func (c *UserController) GetAllCompanies(w http.ResponseWriter, r *http.Request) {
+func (c *Controller) GetAllCompanies(w http.ResponseWriter, r *http.Request) {
 	response := apiutils.New(w, r)
 	uservice := userservice.New(r.Context(), c.repo)
 
@@ -61,21 +60,46 @@ func (c *UserController) GetAllCompanies(w http.ResponseWriter, r *http.Request)
 
 	if err != nil {
 
-		res, _ := response.WrapInApiResponse(&apiutils.ApiResponseParams{
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
 			StatusCode: http.StatusBadRequest,
 			Results:    nil,
 			Message:    err.Error(),
 		})
-		_, _ = w.Write(res)
 		return
 
 	}
 
-	res, _ := response.WrapInApiResponse(&apiutils.ApiResponseParams{
+	response.WrapInApiResponse(&apiutils.ApiResponseParams{
 		StatusCode: http.StatusOK,
 		Results:    companies,
 		Message:    "success",
 	})
-	_, _ = w.Write(res)
+
+}
+
+// GET: /companies/{id}
+
+func (c *Controller) GetCompanyByID(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	uservice := userservice.New(r.Context(), c.repo)
+	response := apiutils.New(w, r)
+
+	co, err := uservice.GetCompanyByID(id)
+
+	if err != nil {
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
+			StatusCode: http.StatusNotFound,
+			Message:    err.Error(),
+			Results:    nil,
+		})
+
+		return
+	}
+
+	response.WrapInApiResponse(&apiutils.ApiResponseParams{
+		StatusCode: http.StatusOK,
+		Message:    "success",
+		Results:    co,
+	})
 
 }

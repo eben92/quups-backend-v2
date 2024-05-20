@@ -41,39 +41,35 @@ func (s *Controller) Signin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("error decoding signin request body")
 
-		res, _ := response.WrapInApiResponse(&apiutils.ApiResponseParams{
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
 			StatusCode: http.StatusBadRequest,
 			Results:    nil,
 			Message:    invalidRequest,
 		})
 
-		_, _ = w.Write(res)
 		return
 	}
 
 	user, err := aservice.SigninHandler(body)
 
 	if err != nil {
-		res, _ := response.WrapInApiResponse(&apiutils.ApiResponseParams{
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
 			StatusCode: http.StatusBadRequest,
 			Results:    nil,
 			Message:    err.Error(),
 		})
 
-		_, _ = w.Write(res)
 		return
 	}
 
 	access_token := user.AccessToken
 	setCookie(w, *access_token)
 
-	res, _ := response.WrapInApiResponse(&apiutils.ApiResponseParams{
+	response.WrapInApiResponse(&apiutils.ApiResponseParams{
 		StatusCode: http.StatusOK,
 		Results:    &user,
 		Message:    success,
 	})
-
-	_, _ = w.Write(res)
 
 }
 
@@ -89,39 +85,35 @@ func (s *Controller) Signup(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("error decoding signin request body")
 
-		res, _ := response.WrapInApiResponse(&apiutils.ApiResponseParams{
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
 			StatusCode: http.StatusBadRequest,
 			Results:    nil,
 			Message:    invalidRequest,
 		})
 
-		_, _ = w.Write(res)
 		return
 	}
 
 	user, err := aservice.SignupHandler(body)
 
 	if err != nil {
-		res, _ := response.WrapInApiResponse(&apiutils.ApiResponseParams{
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
 			StatusCode: http.StatusBadRequest,
 			Results:    nil,
 			Message:    err.Error(),
 		})
 
-		_, _ = w.Write(res)
 		return
 	}
 
 	// TODO:
 	// add OTP and redirect user to confirm their phone number
 
-	res, _ := response.WrapInApiResponse(&apiutils.ApiResponseParams{
+	response.WrapInApiResponse(&apiutils.ApiResponseParams{
 		StatusCode: http.StatusCreated,
 		Results:    &user, //TODO: shoudld we take this out?
 		Message:    success,
 	})
-
-	_, _ = w.Write(res)
 
 }
 
