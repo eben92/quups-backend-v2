@@ -23,7 +23,9 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	// WARNING: this will not work because of foreign key constraints
 	DeleteCompany(ctx context.Context, id string) error
+	GetAllCompanies(ctx context.Context) ([]Company, error)
 	GetCompanyByID(ctx context.Context, id string) (Company, error)
+	GetCompanyByName(ctx context.Context, name string) (Company, error)
 	GetConfigurationByCompanyID(ctx context.Context, companyID string) (Configuration, error)
 	GetMembersByCompanyID(ctx context.Context, arg GetMembersByCompanyIDParams) ([]Member, error)
 	GetPaymentAccountByCompanyID(ctx context.Context, companyID string) (PaymentAccount, error)

@@ -11,9 +11,9 @@ type Service struct {
 	ctx  context.Context
 }
 
-func New(c context.Context, r *repository.Queries) *Service {
+func New(c context.Context, repo *repository.Queries) *Service {
 	return &Service{
-		repo: r,
+		repo: repo,
 		ctx:  c,
 	}
 }

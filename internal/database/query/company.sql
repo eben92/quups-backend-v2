@@ -38,6 +38,17 @@ SELECT * FROM companies
     WHERE id = $1
     LIMIT 1;
 
+-- name: GetCompanyByName :one
+SELECT * FROM companies
+    WHERE name = $1
+    LIMIT 1;
+
+
+-- name: GetAllCompanies :many
+SELECT * 
+    FROM companies
+    LIMIT 10;
+
 -- WARNING: this will not work because of foreign key constraints
 -- name: DeleteCompany :exec
 DELETE FROM companies WHERE id = $1;

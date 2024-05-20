@@ -52,6 +52,7 @@ func (s *Server) userController(r chi.Router) {
 	handler := usercontroller.New(s.repository)
 
 	r.Post("/", handler.CreateCompany)
+	r.Get("/", handler.GetAllCompanies)
 }
 
 func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {

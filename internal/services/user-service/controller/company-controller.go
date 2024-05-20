@@ -9,7 +9,7 @@ import (
 	apiutils "quups-backend/internal/utils/api"
 )
 
-// POST: /companies/create
+// POST: /companies
 func (c *UserController) CreateCompany(w http.ResponseWriter, r *http.Request) {
 	var body *userdto.CreateCompanyParams
 	uservice := userservice.New(r.Context(), c.repo)
@@ -46,6 +46,34 @@ func (c *UserController) CreateCompany(w http.ResponseWriter, r *http.Request) {
 	res, _ := response.WrapInApiResponse(&apiutils.ApiResponseParams{
 		StatusCode: http.StatusCreated,
 		Results:    &newc,
+		Message:    "success",
+	})
+	_, _ = w.Write(res)
+
+}
+
+// GET: /companies
+func (c *UserController) GetAllCompanies(w http.ResponseWriter, r *http.Request) {
+	response := apiutils.New(w, r)
+	uservice := userservice.New(r.Context(), c.repo)
+
+	companies, err := uservice.GetAllCompanies()
+
+	if err != nil {
+
+		res, _ := response.WrapInApiResponse(&apiutils.ApiResponseParams{
+			StatusCode: http.StatusBadRequest,
+			Results:    nil,
+			Message:    err.Error(),
+		})
+		_, _ = w.Write(res)
+		return
+
+	}
+
+	res, _ := response.WrapInApiResponse(&apiutils.ApiResponseParams{
+		StatusCode: http.StatusOK,
+		Results:    companies,
 		Message:    "success",
 	})
 	_, _ = w.Write(res)

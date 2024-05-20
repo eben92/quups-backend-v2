@@ -100,6 +100,53 @@ func (q *Queries) DeleteCompany(ctx context.Context, id string) error {
 	return err
 }
 
+const getAllCompanies = `-- name: GetAllCompanies :many
+SELECT id, name, slug, about, msisdn, email, tin, image_url, banner_url, brand_type, owner_id, total_sales, is_active, currency_code, invitation_code, created_at, updated_at 
+    FROM companies
+    LIMIT 10
+`
+
+func (q *Queries) GetAllCompanies(ctx context.Context) ([]Company, error) {
+	rows, err := q.db.QueryContext(ctx, getAllCompanies)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Company{}
+	for rows.Next() {
+		var i Company
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Slug,
+			&i.About,
+			&i.Msisdn,
+			&i.Email,
+			&i.Tin,
+			&i.ImageUrl,
+			&i.BannerUrl,
+			&i.BrandType,
+			&i.OwnerID,
+			&i.TotalSales,
+			&i.IsActive,
+			&i.CurrencyCode,
+			&i.InvitationCode,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getCompanyByID = `-- name: GetCompanyByID :one
 SELECT id, name, slug, about, msisdn, email, tin, image_url, banner_url, brand_type, owner_id, total_sales, is_active, currency_code, invitation_code, created_at, updated_at FROM companies
     WHERE id = $1
@@ -108,6 +155,37 @@ SELECT id, name, slug, about, msisdn, email, tin, image_url, banner_url, brand_t
 
 func (q *Queries) GetCompanyByID(ctx context.Context, id string) (Company, error) {
 	row := q.db.QueryRowContext(ctx, getCompanyByID, id)
+	var i Company
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Slug,
+		&i.About,
+		&i.Msisdn,
+		&i.Email,
+		&i.Tin,
+		&i.ImageUrl,
+		&i.BannerUrl,
+		&i.BrandType,
+		&i.OwnerID,
+		&i.TotalSales,
+		&i.IsActive,
+		&i.CurrencyCode,
+		&i.InvitationCode,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getCompanyByName = `-- name: GetCompanyByName :one
+SELECT id, name, slug, about, msisdn, email, tin, image_url, banner_url, brand_type, owner_id, total_sales, is_active, currency_code, invitation_code, created_at, updated_at FROM companies
+    WHERE name = $1
+    LIMIT 1
+`
+
+func (q *Queries) GetCompanyByName(ctx context.Context, name string) (Company, error) {
+	row := q.db.QueryRowContext(ctx, getCompanyByName, name)
 	var i Company
 	err := row.Scan(
 		&i.ID,

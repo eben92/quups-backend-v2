@@ -64,7 +64,11 @@ func (s *Service) createCompanyParams(body *userdto.CreateCompanyParams) (*model
 		log.Printf("new company id generated [%s]", p.ID)
 	}
 
-	// if c, _ := s.repo.
+	if c, _ := s.repo.GetCompanyByName(s.ctx, body.Name); c.ID != "" {
+		log.Printf("user name already exist  [%s]", body.Name)
+
+		return nil, errors.New("username already in use. Please choose another one")
+	}
 
 	if body.BannerUrl != "" && utils.IsVaildEmail(body.BannerUrl) {
 		// check if the string is a url
@@ -109,26 +113,72 @@ func (s *Service) CreateCompany(body *userdto.CreateCompanyParams) (*userdto.Com
 
 }
 
+func (s *Service) GetAllCompanies() ([]userdto.CompanyInternalDTO, error) {
+
+	c, err := s.repo.GetAllCompanies(s.ctx)
+
+	if err != nil {
+		log.Printf("error fetching all companies  [%s]", err.Error())
+		return nil, err
+	}
+
+	var comp []userdto.CompanyInternalDTO
+
+	for _, cu := range c {
+		c := mapToCompanyInternalDTO(cu)
+
+		comp = append(comp, *c)
+	}
+
+	return comp, nil
+}
+
+func (s *Service) GetCompanyByName(name string) (*userdto.CompanyInternalDTO, error) {
+
+	return nil, nil
+}
+
+func (s *Service) GetCompanyByID(id string) (*userdto.CompanyInternalDTO, error) {
+
+	return nil, nil
+}
+
 func mapToCompanyInternalDTO(c model.Company) *userdto.CompanyInternalDTO {
 
 	dto := &userdto.CompanyInternalDTO{
-		ID:             c.ID,
-		Name:           c.Name,
-		Email:          c.Email,
-		Msisdn:         c.Msisdn,
-		About:          &c.About.String,
-		ImageUrl:       &c.ImageUrl.String,
-		BannerUrl:      &c.BannerUrl.String,
-		Tin:            &c.Tin.String,
-		BrandType:      c.BrandType,
-		OwnerID:        c.OwnerID,
-		CurrencyCode:   c.CurrencyCode,
-		InvitationCode: &c.InvitationCode.String,
-		Slug:           c.Slug,
-		TotalSales:     c.TotalSales,
-		IsActive:       c.IsActive,
-		CreatedAt:      c.CreatedAt,
-		UpdatedAt:      c.UpdatedAt,
+		ID:     c.ID,
+		Name:   c.Name,
+		Email:  c.Email,
+		Msisdn: c.Msisdn,
+		// About:          &c.About.String,
+		// ImageUrl:       &c.ImageUrl.String,
+		// BannerUrl:      &c.BannerUrl.String,
+		// Tin:            &c.Tin.String,
+		BrandType:    c.BrandType,
+		OwnerID:      c.OwnerID,
+		CurrencyCode: c.CurrencyCode,
+		// InvitationCode: &c.InvitationCode.String,
+		Slug:       c.Slug,
+		TotalSales: c.TotalSales,
+		IsActive:   c.IsActive,
+		CreatedAt:  c.CreatedAt,
+		UpdatedAt:  c.UpdatedAt,
+	}
+
+	if c.About.Valid {
+		dto.About = &c.About.String
+	}
+
+	if c.ImageUrl.Valid {
+		dto.ImageUrl = &c.ImageUrl.String
+	}
+
+	if c.BannerUrl.Valid {
+		dto.BannerUrl = &c.BannerUrl.String
+	}
+
+	if c.Tin.Valid {
+		dto.Tin = &c.Tin.String
 	}
 
 	return dto
