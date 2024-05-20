@@ -2,7 +2,7 @@
 -- +goose StatementBegin
 CREATE TABLE IF NOT EXISTS companies (
     id VARCHAR(21) PRIMARY KEY NOT NULL UNIQUE,
-    name VARCHAR(50) NOT NULL UNIQUE,
+    name CITEXT NOT NULL UNIQUE,
     slug VARCHAR(50) NOT NULL,
     about VARCHAR(250),
     msisdn VARCHAR(15) NOT NULL,

@@ -69,6 +69,8 @@ func (c *Controller) GetAllCompanies(w http.ResponseWriter, r *http.Request) {
 
 	}
 
+	log.Println(companies)
+
 	response.WrapInApiResponse(&apiutils.ApiResponseParams{
 		StatusCode: http.StatusOK,
 		Results:    companies,

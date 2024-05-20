@@ -35,9 +35,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 		pr.Use(local_jwt.Authenticator())
 
 		pr.Route("/companies", s.userController)
-		pr.Get("/health", s.healthHandler)
 	})
 
+	r.Get("/health", s.healthHandler)
 	return r
 }
 
@@ -53,6 +53,7 @@ func (s *Server) userController(r chi.Router) {
 
 	r.Post("/", handler.CreateCompany)
 	r.Get("/", handler.GetAllCompanies)
+	r.Get("/{id}", handler.GetCompanyByID)
 }
 
 func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
@@ -67,9 +68,9 @@ func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
-	u := local_jwt.GetAuthContext(r.Context())
+	// u := local_jwt.GetAuthContext(r.Context())
 
-	log.Printf("auth ctx [%s]", u.Sub)
+	// log.Printf("auth ctx [%s]", u.Sub)
 	jsonResp, _ := json.Marshal(s.db.Health())
 	_, _ = w.Write(jsonResp)
 }

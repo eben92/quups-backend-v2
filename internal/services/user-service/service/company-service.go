@@ -114,7 +114,7 @@ func (s *Service) CreateCompany(body *userdto.CreateCompanyParams) (*userdto.Com
 
 }
 
-func (s *Service) GetAllCompanies() ([]userdto.CompanyInternalDTO, error) {
+func (s *Service) GetAllCompanies() ([]*userdto.CompanyInternalDTO, error) {
 
 	c, err := s.repo.GetAllCompanies(s.ctx)
 
@@ -123,12 +123,12 @@ func (s *Service) GetAllCompanies() ([]userdto.CompanyInternalDTO, error) {
 		return nil, err
 	}
 
-	var comp []userdto.CompanyInternalDTO
+	var comp = []*userdto.CompanyInternalDTO{}
 
 	for _, cu := range c {
 		c := mapToCompanyInternalDTO(cu)
 
-		comp = append(comp, *c)
+		comp = append(comp, c)
 	}
 
 	return comp, nil
