@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/mail"
+	"net/url"
 	"strings"
 
 	"github.com/aidarkhanov/nanoid"
@@ -101,12 +102,36 @@ func IsValidCompanyName(s string) (*string, bool) {
 	return &s, true
 }
 
-func includeSpecialChar(s string) bool {
+// func includeSpecialChar(s string) bool {
 
-	f := func(r rune) bool {
-		return r < 'A' || r > 'z'
+// 	f := func(r rune) bool {
+// 		return r < 'A' || r > 'z'
+// 	}
+
+// 	return strings.IndexFunc(s, f) != -1
+
+// }
+
+func includeSpecialChar(s string) bool {
+	for _, char := range s {
+		if !isSpaceOrLetter(char) {
+			return true
+		}
+	}
+	return false
+}
+
+func isSpaceOrLetter(r rune) bool {
+	return (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || r == ' '
+}
+
+func IsValidURL(link string) bool {
+	u, err := url.Parse(link)
+
+	if err != nil || u.Scheme == "" || u.Host == "" {
+		return false
 	}
 
-	return strings.IndexFunc(s, f) != -1
+	return true
 
 }

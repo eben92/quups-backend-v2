@@ -64,13 +64,15 @@ func (s *Service) createCompanyParams(body *userdto.CreateCompanyParams) (*model
 		log.Printf("new company id generated [%s]", p.ID)
 	}
 
-	if body.BannerUrl != "" {
+	// if c, _ := s.repo.
+
+	if body.BannerUrl != "" && utils.IsVaildEmail(body.BannerUrl) {
 		// check if the string is a url
 		p.BannerUrl.String = body.BannerUrl
 		p.BannerUrl.Valid = true
 	}
 
-	if body.ImageUrl != "" {
+	if body.ImageUrl != "" && utils.IsVaildEmail(body.ImageUrl) {
 		// check if the string is a url
 		p.ImageUrl.String = body.ImageUrl
 		p.ImageUrl.Valid = true
@@ -93,17 +95,40 @@ func (s *Service) CreateCompany(body *userdto.CreateCompanyParams) (*userdto.Com
 		return nil, err
 	}
 
-	c := mapToCompanyInternalDTO(*params)
+	nc, err := s.repo.CreateCompany(s.ctx, *params)
+
+	if err != nil {
+		log.Printf("error creating company. [%s]", err.Error())
+
+		return nil, err
+	}
+
+	c := mapToCompanyInternalDTO(nc)
 
 	return c, nil
 
 }
 
-func mapToCompanyInternalDTO(c model.CreateCompanyParams) *userdto.CompanyInternalDTO {
+func mapToCompanyInternalDTO(c model.Company) *userdto.CompanyInternalDTO {
 
 	dto := &userdto.CompanyInternalDTO{
-		ID:    c.ID,
-		Email: c.Email,
+		ID:             c.ID,
+		Name:           c.Name,
+		Email:          c.Email,
+		Msisdn:         c.Msisdn,
+		About:          &c.About.String,
+		ImageUrl:       &c.ImageUrl.String,
+		BannerUrl:      &c.BannerUrl.String,
+		Tin:            &c.Tin.String,
+		BrandType:      c.BrandType,
+		OwnerID:        c.OwnerID,
+		CurrencyCode:   c.CurrencyCode,
+		InvitationCode: &c.InvitationCode.String,
+		Slug:           c.Slug,
+		TotalSales:     c.TotalSales,
+		IsActive:       c.IsActive,
+		CreatedAt:      c.CreatedAt,
+		UpdatedAt:      c.UpdatedAt,
 	}
 
 	return dto
