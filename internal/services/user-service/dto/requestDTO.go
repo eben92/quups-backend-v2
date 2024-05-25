@@ -1,11 +1,11 @@
 package userdto
 
 type CreateUserParams struct {
-	Email    string
-	Name     string
-	Msisdn   string
-	Gender   string
-	Password string
+	Email    string `json:"email"    yaml:"email"`
+	Name     string `json:"name"     yaml:"name"`
+	Msisdn   string `json:"msisdn"   yaml:"msisdn"`
+	Gender   string `json:"gender"   yaml:"gender"`
+	Password string `json:"password" yaml:"password"`
 }
 
 type CreateCompanyParams struct {

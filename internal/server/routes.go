@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	authcontroller "quups-backend/internal/services/auth-service/controller"
-	usercontroller "quups-backend/internal/services/user-service/controller"
-	local_jwt "quups-backend/internal/utils/jwt"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+
+	authcontroller "quups-backend/internal/services/auth-service/controller"
+	usercontroller "quups-backend/internal/services/user-service/controller"
+	local_jwt "quups-backend/internal/utils/jwt"
 )
 
 func (s *Server) RegisterRoutes() http.Handler {
@@ -55,6 +56,7 @@ func (s *Server) userController(r chi.Router) {
 	r.Get("/", handler.GetAllCompanies)
 	r.Get("/{id}", handler.GetCompanyByID)
 	r.Get("/name/{name}", handler.GetCompanyByName)
+	r.Get("/teams", handler.GetUserTeams)
 }
 
 func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
@@ -71,7 +73,6 @@ func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 	// u := local_jwt.GetAuthContext(r.Context())
 
-	// log.Printf("auth ctx [%s]", u.Sub)
 	jsonResp, _ := json.Marshal(s.db.Health())
 	_, _ = w.Write(jsonResp)
 }

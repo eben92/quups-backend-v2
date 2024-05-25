@@ -40,3 +40,13 @@ type CompanyInternalDTO struct {
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
+
+type UserTeamDTO struct {
+	Company   CompanyInternalDTO `json:"company"`
+	ID        string             `json:"id"`
+	Role      string             `json:"role"`
+	Status    string             `json:"status"`
+	Msisdn    string             `json:"msisdn"`
+	Email     *string            `json:"email"`
+	CompanyID string             `json:"company_id"`
+}

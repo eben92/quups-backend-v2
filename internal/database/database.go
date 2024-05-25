@@ -8,10 +8,10 @@ import (
 	"os"
 	"time"
 
-	"quups-backend/internal/database/repository"
-
 	_ "github.com/jackc/pgx/v5/stdlib"
 	_ "github.com/joho/godotenv/autoload"
+
+	"quups-backend/internal/database/repository"
 )
 
 type Service interface {
@@ -38,7 +38,14 @@ func NewService() Service {
 	if dbInstance != nil {
 		return dbInstance
 	}
-	connStr := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable", username, password, host, port, database)
+	connStr := fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		username,
+		password,
+		host,
+		port,
+		database,
+	)
 	db, err := sql.Open("pgx", connStr)
 	if err != nil {
 		log.Fatal(err)
@@ -52,9 +59,7 @@ func NewService() Service {
 }
 
 func (s *service) Repository() *repository.Queries {
-
 	return s.repository
-
 }
 
 func (s *service) Health() map[string]string {

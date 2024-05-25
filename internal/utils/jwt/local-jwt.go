@@ -41,11 +41,8 @@ var (
 
 // Authenticator is a middleware that handles jwt authentications
 func Authenticator() func(http.Handler) http.Handler {
-
 	return func(next http.Handler) http.Handler {
-
 		hfn := func(w http.ResponseWriter, r *http.Request) {
-
 			var token string
 
 			findtokens := []func(*http.Request) string{GetTokenFromHeader, GetTokenFromCookie}
@@ -67,7 +64,6 @@ func Authenticator() func(http.Handler) http.Handler {
 			}
 
 			c, err := ParseToken(token)
-
 			if err != nil {
 
 				http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -75,7 +71,6 @@ func Authenticator() func(http.Handler) http.Handler {
 			}
 
 			ctx, err := newContext(r.Context(), c)
-
 			if err != nil {
 
 				http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -88,7 +83,6 @@ func Authenticator() func(http.Handler) http.Handler {
 
 		return http.HandlerFunc(hfn)
 	}
-
 }
 
 func GetTokenFromHeader(r *http.Request) string {
@@ -103,9 +97,7 @@ func GetTokenFromHeader(r *http.Request) string {
 }
 
 func GetTokenFromCookie(r *http.Request) string {
-
 	cookie, err := r.Cookie(COOKIE_NAME)
-
 	if err != nil {
 		return ""
 	}
@@ -113,7 +105,6 @@ func GetTokenFromCookie(r *http.Request) string {
 	log.Printf("token found in cookie")
 
 	return cookie.Value
-
 }
 
 /*
@@ -121,19 +112,17 @@ Generetes a signed token and return as byte or nil.
 Convert to string before sending to client
 */
 func GenereteJWT(ID, name string) ([]byte, error) {
-
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub":    ID,
 		"issuer": "WEB",
 		"name":   name,
-		"exp":    time.Now().Add(time.Minute).Unix(),
+		"exp":    time.Now().Add(time.Hour * 24 * 30).Unix(),
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString([]byte(JWT_SECRET))
-
 	if err != nil {
 		log.Printf("Error signing jwt [%s]", err.Error())
 
@@ -145,9 +134,7 @@ func GenereteJWT(ID, name string) ([]byte, error) {
 
 // ParseToken is use to verify jwt tokens
 func ParseToken(tokenString string) (jwt.MapClaims, error) {
-
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-
 		if _, alg := token.Method.(*jwt.SigningMethodHMAC); !alg {
 
 			log.Printf("invalid token alg [%s]", token.Header["alg"])
@@ -157,7 +144,6 @@ func ParseToken(tokenString string) (jwt.MapClaims, error) {
 
 		return []byte(JWT_SECRET), nil
 	})
-
 	if err != nil {
 		log.Printf("error parsing token [%s]", err.Error())
 
@@ -171,7 +157,6 @@ func ParseToken(tokenString string) (jwt.MapClaims, error) {
 	}
 
 	return claims, nil
-
 }
 
 func newContext(ctx context.Context, claims jwt.MapClaims) (context.Context, error) {
@@ -192,5 +177,4 @@ func GetAuthContext(ctx context.Context) *authContext {
 	return &authContext{
 		Sub: claims["sub"].(string),
 	}
-
 }

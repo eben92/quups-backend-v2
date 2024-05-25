@@ -2,18 +2,19 @@ package userservice
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"log"
-	model "quups-backend/internal/database/repository"
-	userdto "quups-backend/internal/services/user-service/dto"
-	"quups-backend/internal/utils"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
+
+	model "quups-backend/internal/database/repository"
+	userdto "quups-backend/internal/services/user-service/dto"
+	"quups-backend/internal/utils"
 )
 
 func (s *Service) TestCreate(body *userdto.CreateUserParams) (*model.CreateUserParams, error) {
-
 	if body.Name == "" {
 		return nil, fmt.Errorf("user name is required")
 	}
@@ -34,7 +35,6 @@ func (s *Service) TestCreate(body *userdto.CreateUserParams) (*model.CreateUserP
 	}
 
 	if body.Password != "" {
-
 		// todo: hash password here
 		u.Password.String = body.Password
 	}
@@ -42,13 +42,19 @@ func (s *Service) TestCreate(body *userdto.CreateUserParams) (*model.CreateUserP
 	return u, nil
 }
 
-func (s *Service) createUserParams(body *userdto.CreateUserParams) (*model.CreateUserParams, error) {
-
+func (s *Service) createUserParams(
+	body *userdto.CreateUserParams,
+) (*model.CreateUserParams, error) {
 	if body.Email == "" || body.Msisdn == "" {
 		return nil, fmt.Errorf("email and phone number is required")
 	}
 
-	log.Printf("setting up params to create user with name, email and msisdn: [%s] [%s] [%s]", body.Name, body.Email, body.Msisdn)
+	log.Printf(
+		"setting up params to create user with name, email and msisdn: [%s] [%s] [%s]",
+		body.Name,
+		body.Email,
+		body.Msisdn,
+	)
 
 	if len(strings.TrimSpace(body.Name)) < 3 {
 		return nil, fmt.Errorf("full name must be at least 5 characters.")
@@ -106,7 +112,6 @@ func (s *Service) createUserParams(body *userdto.CreateUserParams) (*model.Creat
 		}
 
 		hashpass, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
-
 		if err != nil {
 			return nil, fmt.Errorf("Something went wrong. Please try again. #1")
 		}
@@ -121,7 +126,6 @@ func (s *Service) createUserParams(body *userdto.CreateUserParams) (*model.Creat
 func (s *Service) Create(body *userdto.CreateUserParams) (*userdto.UserInternalDTO, error) {
 	var user *userdto.UserInternalDTO
 	params, err := s.createUserParams(body)
-
 	if err != nil {
 		log.Printf("failed to create user error: [%s]", err.Error())
 
@@ -131,7 +135,6 @@ func (s *Service) Create(body *userdto.CreateUserParams) (*userdto.UserInternalD
 	log.Printf("about to create new user wih email [%s]", params.Email)
 
 	u, err := s.repo.CreateUser(s.ctx, *params)
-
 	if err != nil {
 		log.Printf("error fetching user with email error:[%s]", err.Error())
 
@@ -160,7 +163,6 @@ func (s *Service) FindByEmail(e string) (*userdto.UserInternalDTO, error) {
 	var user *userdto.UserInternalDTO
 
 	u, err := s.repo.GetUserByEmail(s.ctx, e)
-
 	if err != nil {
 		log.Printf("error fetching user with email [%s] error: [%s]", e, err.Error())
 
@@ -176,7 +178,6 @@ func (s *Service) FindByEmail(e string) (*userdto.UserInternalDTO, error) {
 	user = mapToUserInternalDTO(u)
 
 	return user, nil
-
 }
 
 func (s *Service) FindByID(id string) (*userdto.UserInternalDTO, error) {
@@ -184,7 +185,6 @@ func (s *Service) FindByID(id string) (*userdto.UserInternalDTO, error) {
 	var user *userdto.UserInternalDTO
 
 	u, err := s.repo.GetUserByID(s.ctx, id)
-
 	if err != nil {
 		log.Printf("error fetching user with ID [%s] error: [%s]", id, err.Error())
 
@@ -200,7 +200,6 @@ func (s *Service) FindByID(id string) (*userdto.UserInternalDTO, error) {
 	user = mapToUserInternalDTO(u)
 
 	return user, nil
-
 }
 
 func (s *Service) FindByMsisdn(msisdn string) (*userdto.UserInternalDTO, error) {
@@ -225,7 +224,6 @@ func (s *Service) FindByMsisdn(msisdn string) (*userdto.UserInternalDTO, error) 
 		String: msisdn,
 		Valid:  true,
 	})
-
 	if err != nil {
 		log.Printf("error fetching user with msisdn [%s] error: [%s]", msisdn, err.Error())
 
@@ -242,7 +240,29 @@ func (s *Service) FindByMsisdn(msisdn string) (*userdto.UserInternalDTO, error) 
 	log.Printf("user with msisdn [%s] found", msisdn)
 
 	return user, nil
+}
 
+func (s *Service) GetUserTeams(userId string) ([]*userdto.UserTeamDTO, error) {
+	log.Printf("getting user teams user: [%s]", userId)
+
+	teams := []*userdto.UserTeamDTO{}
+	t, err := s.repo.GetUserTeams(s.ctx, sql.NullString{
+		String: userId,
+		Valid:  true,
+	})
+	if err != nil {
+		log.Printf("error fetching user teams err: [%s]", err.Error())
+
+		return nil, errors.New("could not find user teams")
+	}
+
+	for _, tm := range t {
+		ut := mapToUserTeamInternalDTO(tm)
+
+		teams = append(teams, ut)
+	}
+
+	return teams, nil
 }
 
 func (s *Service) Update(id string) {
@@ -254,7 +274,6 @@ func (s *Service) Delete(id string) {
 }
 
 func mapToUserInternalDTO(user model.User) *userdto.UserInternalDTO {
-
 	dto := &userdto.UserInternalDTO{
 		ID:    user.ID,
 		Email: user.Email,
@@ -281,5 +300,33 @@ func mapToUserInternalDTO(user model.User) *userdto.UserInternalDTO {
 	}
 
 	return dto
+}
 
+func mapToUserTeamInternalDTO(t model.GetUserTeamsRow) *userdto.UserTeamDTO {
+	tm := &userdto.UserTeamDTO{
+		ID:        t.ID,
+		CompanyID: t.ID_2,
+		Msisdn:    t.Msisdn,
+		Status:    t.Status,
+		Company: userdto.CompanyInternalDTO{
+			ID:     t.ID_2,
+			Name:   t.Name_2,
+			Msisdn: t.Msisdn_2,
+			Slug:   t.Slug,
+		},
+	}
+
+	if t.Email.Valid {
+		tm.Email = &t.Email.String
+	}
+
+	if t.BannerUrl.Valid {
+		tm.Company.BannerUrl = &t.BannerUrl.String
+	}
+
+	if t.ImageUrl.Valid {
+		tm.Company.ImageUrl = &t.ImageUrl.String
+	}
+
+	return tm
 }
