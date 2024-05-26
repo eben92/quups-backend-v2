@@ -108,40 +108,37 @@ func (q *Queries) GetMembersByCompanyID(ctx context.Context, arg GetMembersByCom
 }
 
 const getUserTeams = `-- name: GetUserTeams :many
-SELECT members.id, members.name, members.msisdn, members.email, members.role, members.status, members.company_id, members.user_id, members.created_at, members.updated_at, companies.id, companies.name, companies.slug, companies.about, companies.msisdn, companies.email, companies.tin, companies.image_url, companies.banner_url, companies.brand_type, companies.owner_id, companies.total_sales, companies.is_active, companies.currency_code, companies.invitation_code, companies.created_at, companies.updated_at
+SELECT members.id, members.name, members.msisdn, members.email, members.role, members.status, members.company_id, members.user_id, members.created_at, members.updated_at,  
+    companies.email as company_email,
+    companies.name as company_name,
+    companies.slug as company_slug,
+    companies.banner_url as company_banner_url,
+    companies.image_url as company_image_url,
+    companies.about as company_about,
+    companies.is_active as company_is_active
 FROM members
 JOIN companies ON members.company_id = companies.id
 WHERE members.user_id = $1
 `
 
 type GetUserTeamsRow struct {
-	ID             string         `json:"id"`
-	Name           string         `json:"name"`
-	Msisdn         string         `json:"msisdn"`
-	Email          sql.NullString `json:"email"`
-	Role           string         `json:"role"`
-	Status         string         `json:"status"`
-	CompanyID      string         `json:"company_id"`
-	UserID         sql.NullString `json:"user_id"`
-	CreatedAt      time.Time      `json:"created_at"`
-	UpdatedAt      time.Time      `json:"updated_at"`
-	ID_2           string         `json:"id_2"`
-	Name_2         string         `json:"name_2"`
-	Slug           string         `json:"slug"`
-	About          sql.NullString `json:"about"`
-	Msisdn_2       string         `json:"msisdn_2"`
-	Email_2        string         `json:"email_2"`
-	Tin            sql.NullString `json:"tin"`
-	ImageUrl       sql.NullString `json:"image_url"`
-	BannerUrl      sql.NullString `json:"banner_url"`
-	BrandType      string         `json:"brand_type"`
-	OwnerID        string         `json:"owner_id"`
-	TotalSales     int32          `json:"total_sales"`
-	IsActive       bool           `json:"is_active"`
-	CurrencyCode   string         `json:"currency_code"`
-	InvitationCode sql.NullString `json:"invitation_code"`
-	CreatedAt_2    time.Time      `json:"created_at_2"`
-	UpdatedAt_2    time.Time      `json:"updated_at_2"`
+	ID               string         `json:"id"`
+	Name             string         `json:"name"`
+	Msisdn           string         `json:"msisdn"`
+	Email            sql.NullString `json:"email"`
+	Role             string         `json:"role"`
+	Status           string         `json:"status"`
+	CompanyID        string         `json:"company_id"`
+	UserID           sql.NullString `json:"user_id"`
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        time.Time      `json:"updated_at"`
+	CompanyEmail     string         `json:"company_email"`
+	CompanyName      string         `json:"company_name"`
+	CompanySlug      string         `json:"company_slug"`
+	CompanyBannerUrl sql.NullString `json:"company_banner_url"`
+	CompanyImageUrl  sql.NullString `json:"company_image_url"`
+	CompanyAbout     sql.NullString `json:"company_about"`
+	CompanyIsActive  bool           `json:"company_is_active"`
 }
 
 func (q *Queries) GetUserTeams(ctx context.Context, userID sql.NullString) ([]GetUserTeamsRow, error) {
@@ -164,23 +161,13 @@ func (q *Queries) GetUserTeams(ctx context.Context, userID sql.NullString) ([]Ge
 			&i.UserID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.ID_2,
-			&i.Name_2,
-			&i.Slug,
-			&i.About,
-			&i.Msisdn_2,
-			&i.Email_2,
-			&i.Tin,
-			&i.ImageUrl,
-			&i.BannerUrl,
-			&i.BrandType,
-			&i.OwnerID,
-			&i.TotalSales,
-			&i.IsActive,
-			&i.CurrencyCode,
-			&i.InvitationCode,
-			&i.CreatedAt_2,
-			&i.UpdatedAt_2,
+			&i.CompanyEmail,
+			&i.CompanyName,
+			&i.CompanySlug,
+			&i.CompanyBannerUrl,
+			&i.CompanyImageUrl,
+			&i.CompanyAbout,
+			&i.CompanyIsActive,
 		); err != nil {
 			return nil, err
 		}
@@ -196,6 +183,7 @@ func (q *Queries) GetUserTeams(ctx context.Context, userID sql.NullString) ([]Ge
 }
 
 const updateMember = `-- name: UpdateMember :one
+
 UPDATE members SET 
         name = $2, 
         email = $3,
@@ -213,6 +201,10 @@ type UpdateMemberParams struct {
 	Status string         `json:"status"`
 }
 
+// SELECT members.*, companies.*
+// FROM members
+// JOIN companies ON members.company_id = companies.id
+// WHERE members.user_id = sqlc.arg(user_id);
 func (q *Queries) UpdateMember(ctx context.Context, arg UpdateMemberParams) (Member, error) {
 	row := q.db.QueryRowContext(ctx, updateMember,
 		arg.ID,

@@ -39,6 +39,10 @@ type Querier interface {
 	GetWorkingHoursByCompanyID(ctx context.Context, companyID string) ([]WorkingHour, error)
 	UpdateCompany(ctx context.Context, arg UpdateCompanyParams) (Company, error)
 	UpdateConfiguationByCompanyID(ctx context.Context, arg UpdateConfiguationByCompanyIDParams) (Configuration, error)
+	//SELECT members.*, companies.*
+	//FROM members
+	//JOIN companies ON members.company_id = companies.id
+	//WHERE members.user_id = sqlc.arg(user_id);
 	UpdateMember(ctx context.Context, arg UpdateMemberParams) (Member, error)
 	UpdateMemberInvitationStatus(ctx context.Context, arg UpdateMemberInvitationStatusParams) (Member, error)
 	UpdatePaymentAccountByCompanyID(ctx context.Context, arg UpdatePaymentAccountByCompanyIDParams) (PaymentAccount, error)

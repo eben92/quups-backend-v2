@@ -41,12 +41,23 @@ type CompanyInternalDTO struct {
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
+type TeamCompanyDTO struct {
+	ID        string  `json:"id"`
+	Name      string  `json:"name"`
+	Email     string  `json:"email"`
+	Msisdn    *string `json:"msisdn"`
+	BannerUrl *string `json:"banner_url"`
+	ImageUrl  *string `json:"image_url"`
+	IsActive  bool    `json:"is_active"`
+	Slug      string  `json:"slug"`
+}
+
 type UserTeamDTO struct {
-	Company   CompanyInternalDTO `json:"company"`
-	ID        string             `json:"id"`
-	Role      string             `json:"role"`
-	Status    string             `json:"status"`
-	Msisdn    string             `json:"msisdn"`
-	Email     *string            `json:"email"`
-	CompanyID string             `json:"company_id"`
+	Company   *TeamCompanyDTO `json:"company"`
+	ID        string          `json:"id"`
+	Role      string          `json:"role"`
+	Status    string          `json:"status"`
+	Msisdn    string          `json:"msisdn"`
+	Email     *string         `json:"email"`
+	CompanyID string          `json:"company_id"`
 }

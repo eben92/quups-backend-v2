@@ -305,14 +305,14 @@ func mapToUserInternalDTO(user model.User) *userdto.UserInternalDTO {
 func mapToUserTeamInternalDTO(t model.GetUserTeamsRow) *userdto.UserTeamDTO {
 	tm := &userdto.UserTeamDTO{
 		ID:        t.ID,
-		CompanyID: t.ID_2,
+		CompanyID: t.CompanyID,
 		Msisdn:    t.Msisdn,
 		Status:    t.Status,
-		Company: userdto.CompanyInternalDTO{
-			ID:     t.ID_2,
-			Name:   t.Name_2,
-			Msisdn: t.Msisdn_2,
-			Slug:   t.Slug,
+		Company: &userdto.TeamCompanyDTO{
+			ID:    t.CompanyID,
+			Name:  t.CompanyName,
+			Email: t.CompanyEmail,
+			Slug:  t.CompanySlug,
 		},
 	}
 
@@ -320,12 +320,12 @@ func mapToUserTeamInternalDTO(t model.GetUserTeamsRow) *userdto.UserTeamDTO {
 		tm.Email = &t.Email.String
 	}
 
-	if t.BannerUrl.Valid {
-		tm.Company.BannerUrl = &t.BannerUrl.String
+	if t.CompanyBannerUrl.Valid {
+		tm.Company.BannerUrl = &t.CompanyBannerUrl.String
 	}
 
-	if t.ImageUrl.Valid {
-		tm.Company.ImageUrl = &t.ImageUrl.String
+	if t.CompanyImageUrl.Valid {
+		tm.Company.ImageUrl = &t.CompanyImageUrl.String
 	}
 
 	return tm
