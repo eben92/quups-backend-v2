@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"quups-backend/internal/database/repository"
+	"quups-backend/internal/database"
 	authdto "quups-backend/internal/services/auth-service/dto"
 	authservice "quups-backend/internal/services/auth-service/service"
 	userdto "quups-backend/internal/services/user-service/dto"
@@ -15,7 +15,7 @@ import (
 )
 
 type Controller struct {
-	repo *repository.Queries
+	db *database.Service
 }
 
 const (
@@ -23,16 +23,16 @@ const (
 	success        = "success"
 )
 
-func New(r *repository.Queries) *Controller {
+func New(db *database.Service) *Controller {
 	return &Controller{
-		repo: r,
+		db: db,
 	}
 }
 
 // POST: /auth/signin
 func (s *Controller) Signin(w http.ResponseWriter, r *http.Request) {
 	var body *authdto.SignInRequestDTO
-	aservice := authservice.New(r.Context(), s.repo)
+	aservice := authservice.New(r.Context(), s.db)
 	response := apiutils.New(w, r)
 
 	err := json.NewDecoder(r.Body).Decode(&body)
@@ -51,7 +51,6 @@ func (s *Controller) Signin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := aservice.SigninHandler(body)
-
 	if err != nil {
 		response.WrapInApiResponse(&apiutils.ApiResponseParams{
 			StatusCode: http.StatusBadRequest,
@@ -70,13 +69,12 @@ func (s *Controller) Signin(w http.ResponseWriter, r *http.Request) {
 		Results:    &user,
 		Message:    success,
 	})
-
 }
 
 // POST: /auth/signup
 func (s *Controller) Signup(w http.ResponseWriter, r *http.Request) {
 	var body *userdto.CreateUserParams
-	aservice := authservice.New(r.Context(), s.repo)
+	aservice := authservice.New(r.Context(), s.db)
 	response := apiutils.New(w, r)
 
 	err := json.NewDecoder(r.Body).Decode(&body)
@@ -95,7 +93,6 @@ func (s *Controller) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, err := aservice.SignupHandler(body)
-
 	if err != nil {
 		response.WrapInApiResponse(&apiutils.ApiResponseParams{
 			StatusCode: http.StatusBadRequest,
@@ -111,10 +108,9 @@ func (s *Controller) Signup(w http.ResponseWriter, r *http.Request) {
 
 	response.WrapInApiResponse(&apiutils.ApiResponseParams{
 		StatusCode: http.StatusCreated,
-		Results:    &user, //TODO: shoudld we take this out?
+		Results:    &user, // TODO: shoudld we take this out?
 		Message:    success,
 	})
-
 }
 
 func setCookie(w http.ResponseWriter, t string) {
@@ -129,5 +125,4 @@ func setCookie(w http.ResponseWriter, t string) {
 	}
 
 	http.SetCookie(w, cookie)
-
 }

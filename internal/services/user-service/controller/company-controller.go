@@ -10,13 +10,12 @@ import (
 	userdto "quups-backend/internal/services/user-service/dto"
 	userservice "quups-backend/internal/services/user-service/service"
 	apiutils "quups-backend/internal/utils/api"
-	local_jwt "quups-backend/internal/utils/jwt"
 )
 
 // POST: /companies
-func (c *Controller) CreateCompany(w http.ResponseWriter, r *http.Request) {
+func (c *controller) CreateCompany(w http.ResponseWriter, r *http.Request) {
 	var body *userdto.CreateCompanyParams
-	uservice := userservice.New(r.Context(), c.repo)
+	cmpsrv := userservice.New(r.Context(), c.db).CompanyService()
 	response := apiutils.New(w, r)
 
 	err := json.NewDecoder(r.Body).Decode(&body)
@@ -33,7 +32,7 @@ func (c *Controller) CreateCompany(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newc, err := uservice.CreateCompany(body)
+	newc, err := cmpsrv.CreateCompany(body)
 	if err != nil {
 
 		response.WrapInApiResponse(&apiutils.ApiResponseParams{
@@ -52,11 +51,11 @@ func (c *Controller) CreateCompany(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET: /companies
-func (c *Controller) GetAllCompanies(w http.ResponseWriter, r *http.Request) {
+func (c *controller) GetAllCompanies(w http.ResponseWriter, r *http.Request) {
 	response := apiutils.New(w, r)
-	uservice := userservice.New(r.Context(), c.repo)
+	cmpsrv := userservice.New(r.Context(), c.db).CompanyService()
 
-	companies, err := uservice.GetAllCompanies()
+	companies, err := cmpsrv.GetAllCompanies()
 	if err != nil {
 
 		response.WrapInApiResponse(&apiutils.ApiResponseParams{
@@ -78,15 +77,15 @@ func (c *Controller) GetAllCompanies(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET: /companies/{id}
-func (c *Controller) GetCompanyByID(w http.ResponseWriter, r *http.Request) {
+func (c *controller) GetCompanyByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	name := r.URL.Query().Get("name")
 
 	log.Printf("name :[%s]", name)
-	uservice := userservice.New(r.Context(), c.repo)
+	cmpsrv := userservice.New(r.Context(), c.db).CompanyService()
 	response := apiutils.New(w, r)
 
-	co, err := uservice.GetCompanyByID(id)
+	co, err := cmpsrv.GetCompanyByID(id)
 	if err != nil {
 		response.WrapInApiResponse(&apiutils.ApiResponseParams{
 			StatusCode: http.StatusNotFound,
@@ -105,13 +104,13 @@ func (c *Controller) GetCompanyByID(w http.ResponseWriter, r *http.Request) {
 }
 
 // GET: /companies/name/{name}
-func (c *Controller) GetCompanyByName(w http.ResponseWriter, r *http.Request) {
+func (c *controller) GetCompanyByName(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 
-	uservice := userservice.New(r.Context(), c.repo)
+	cmpsrv := userservice.New(r.Context(), c.db).CompanyService()
 	response := apiutils.New(w, r)
 
-	co, err := uservice.GetCompanyByName(name)
+	co, err := cmpsrv.GetCompanyByName(name)
 	if err != nil {
 		response.WrapInApiResponse(&apiutils.ApiResponseParams{
 			StatusCode: http.StatusNotFound,
@@ -126,30 +125,5 @@ func (c *Controller) GetCompanyByName(w http.ResponseWriter, r *http.Request) {
 		StatusCode: http.StatusOK,
 		Message:    "success",
 		Results:    co,
-	})
-}
-
-func (c *Controller) GetUserTeams(w http.ResponseWriter, r *http.Request) {
-	response := apiutils.New(w, r)
-
-	claims := local_jwt.GetAuthContext(r.Context())
-
-	usrv := userservice.New(r.Context(), c.repo)
-
-	t, err := usrv.GetUserTeams(claims.Sub)
-	if err != nil {
-
-		response.WrapInApiResponse(&apiutils.ApiResponseParams{
-			StatusCode: http.StatusOK,
-			Message:    err.Error(),
-			Results:    nil,
-		})
-
-		return
-	}
-	response.WrapInApiResponse(&apiutils.ApiResponseParams{
-		StatusCode: http.StatusOK,
-		Message:    "success",
-		Results:    t,
 	})
 }

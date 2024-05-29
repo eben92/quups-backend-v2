@@ -1,20 +1,25 @@
 package userservice
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log"
+	"slices"
+	"strings"
+
 	model "quups-backend/internal/database/repository"
 	userdto "quups-backend/internal/services/user-service/dto"
 	"quups-backend/internal/utils"
 	local_jwt "quups-backend/internal/utils/jwt"
-	"slices"
-	"strings"
 )
 
-func (s *Service) createCompanyParams(body *userdto.CreateCompanyParams) (*model.CreateCompanyParams, error) {
-
-	auth_user := local_jwt.GetAuthContext(s.ctx)
+func createCompanyParams(
+	ctx context.Context,
+	repo *model.Queries,
+	body *userdto.CreateCompanyParams,
+) (*model.CreateCompanyParams, error) {
+	auth_user := local_jwt.GetAuthContext(ctx)
 
 	if body.Email == "" || body.Msisdn == "" || body.Name == "" {
 		return nil, errors.New("company email, name & phone number is required")
@@ -35,7 +40,13 @@ func (s *Service) createCompanyParams(body *userdto.CreateCompanyParams) (*model
 		return nil, invalidMsisdnErr
 	}
 
-	log.Printf("setting up params to create a new company with name: [%s], email: [%s], msisdn: [%s], by: [%s]", body.Name, body.Email, body.Msisdn, auth_user.Sub)
+	log.Printf(
+		"setting up params to create a new company with name: [%s], email: [%s], msisdn: [%s], by: [%s]",
+		body.Name,
+		body.Email,
+		body.Msisdn,
+		auth_user.Sub,
+	)
 
 	p := &model.CreateCompanyParams{
 		ID:           utils.GenerateIntID(6),
@@ -56,7 +67,7 @@ func (s *Service) createCompanyParams(body *userdto.CreateCompanyParams) (*model
 
 	// TODO: check invitationCode
 
-	if c, _ := s.repo.GetCompanyByID(s.ctx, p.ID); c.ID != "" {
+	if c, _ := repo.GetCompanyByID(ctx, p.ID); c.ID != "" {
 		log.Printf("company id already exist. used by [%s] - [%s]", c.Name, c.ID)
 		log.Println("generating new company id")
 
@@ -65,7 +76,7 @@ func (s *Service) createCompanyParams(body *userdto.CreateCompanyParams) (*model
 		log.Printf("new company id generated [%s]", p.ID)
 	}
 
-	if c, _ := s.repo.GetCompanyByName(s.ctx, body.Name); c.ID != "" {
+	if c, _ := repo.GetCompanyByName(ctx, body.Name); c.ID != "" {
 		log.Printf("user name already exist  [%s]", body.Name)
 
 		return nil, errors.New("username already in use. Please choose another one")
@@ -91,39 +102,40 @@ func (s *Service) createCompanyParams(body *userdto.CreateCompanyParams) (*model
 	return p, nil
 }
 
-func (s *Service) CreateCompany(body *userdto.CreateCompanyParams) (*userdto.CompanyInternalDTO, error) {
-	params, err := s.createCompanyParams(body)
+func (s *service) CreateCompany(
+	body *userdto.CreateCompanyParams,
+) (*userdto.CompanyInternalDTO, error) {
+	repo := s.db.NewRepository()
 
+	params, err := createCompanyParams(s.ctx, repo, body)
 	if err != nil {
 		log.Printf("failed to create company error: [%s]", err.Error())
 
 		return nil, err
 	}
 
-	nc, err := s.repo.CreateCompany(s.ctx, *params)
-
+	//  tx, err :=
+	nc, err := repo.CreateCompany(s.ctx, *params)
 	if err != nil {
 		log.Printf("error creating company. [%s]", err.Error())
 
-		return nil, err
+		return nil, errors.New("an error occured while creating company. please try again")
 	}
 
 	c := mapToCompanyInternalDTO(nc)
 
 	return c, nil
-
 }
 
-func (s *Service) GetAllCompanies() ([]*userdto.CompanyInternalDTO, error) {
-
-	c, err := s.repo.GetAllCompanies(s.ctx)
-
+func (s *service) GetAllCompanies() ([]*userdto.CompanyInternalDTO, error) {
+	repo := s.db.NewRepository()
+	c, err := repo.GetAllCompanies(s.ctx)
 	if err != nil {
 		log.Printf("error fetching all companies  [%s]", err.Error())
 		return nil, err
 	}
 
-	var comp = []*userdto.CompanyInternalDTO{}
+	comp := []*userdto.CompanyInternalDTO{}
 
 	for _, cu := range c {
 		c := mapToCompanyInternalDTO(cu)
@@ -134,10 +146,9 @@ func (s *Service) GetAllCompanies() ([]*userdto.CompanyInternalDTO, error) {
 	return comp, nil
 }
 
-func (s *Service) GetCompanyByName(name string) (*userdto.CompanyInternalDTO, error) {
-
-	res, err := s.repo.GetCompanyByName(s.ctx, name)
-
+func (s *service) GetCompanyByName(name string) (*userdto.CompanyInternalDTO, error) {
+	repo := s.db.NewRepository()
+	res, err := repo.GetCompanyByName(s.ctx, name)
 	if err != nil {
 		log.Printf("error fetching company with name: [%s]", err.Error())
 		return nil, fmt.Errorf("company with name: [%s] not found", name)
@@ -148,10 +159,9 @@ func (s *Service) GetCompanyByName(name string) (*userdto.CompanyInternalDTO, er
 	return c, nil
 }
 
-func (s *Service) GetCompanyByID(id string) (*userdto.CompanyInternalDTO, error) {
-
-	res, err := s.repo.GetCompanyByID(s.ctx, id)
-
+func (s *service) GetCompanyByID(id string) (*userdto.CompanyInternalDTO, error) {
+	repo := s.db.NewRepository()
+	res, err := repo.GetCompanyByID(s.ctx, id)
 	if err != nil {
 		log.Printf("error fetching company with id [%s]", err.Error())
 		return nil, fmt.Errorf("company with id [%s] not found", id)
@@ -163,7 +173,6 @@ func (s *Service) GetCompanyByID(id string) (*userdto.CompanyInternalDTO, error)
 }
 
 func mapToCompanyInternalDTO(c model.Company) *userdto.CompanyInternalDTO {
-
 	dto := &userdto.CompanyInternalDTO{
 		ID:     c.ID,
 		Name:   c.Name,
@@ -201,5 +210,4 @@ func mapToCompanyInternalDTO(c model.Company) *userdto.CompanyInternalDTO {
 	}
 
 	return dto
-
 }

@@ -5,37 +5,35 @@ import (
 	"fmt"
 	"log"
 
-	"quups-backend/internal/database/repository"
+	"golang.org/x/crypto/bcrypt"
+
+	"quups-backend/internal/database"
 	authdto "quups-backend/internal/services/auth-service/dto"
 	userdto "quups-backend/internal/services/user-service/dto"
 	userservice "quups-backend/internal/services/user-service/service"
 	local_jwt "quups-backend/internal/utils/jwt"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
 const (
 	incorrectpass = "incorrect phone number or password"
 )
 
-type Service struct {
-	repo *repository.Queries
-	ctx  context.Context
+type service struct {
+	ctx context.Context
+	db  *database.Service
 }
 
-func New(ctx context.Context, r *repository.Queries) *Service {
-	return &Service{
-		repo: r,
-		ctx:  ctx,
+func New(ctx context.Context, db *database.Service) *service {
+	return &service{
+		ctx: ctx,
+		db:  db,
 	}
 }
 
-func (s *Service) SigninHandler(body *authdto.SignInRequestDTO) (*authdto.ResponseUserDTO, error) {
+func (s *service) SigninHandler(body *authdto.SignInRequestDTO) (*authdto.ResponseUserDTO, error) {
+	uservice := userservice.New(s.ctx, s.db).UserService()
 
-	uService := userservice.New(s.ctx, s.repo)
-
-	u, err := uService.FindByMsisdn(body.Msisdn)
-
+	u, err := uservice.FindByMsisdn(body.Msisdn)
 	if err != nil {
 		return nil, fmt.Errorf(incorrectpass)
 	}
@@ -50,12 +48,11 @@ func (s *Service) SigninHandler(body *authdto.SignInRequestDTO) (*authdto.Respon
 	return user, nil
 }
 
-func (s *Service) SignupHandler(body *userdto.CreateUserParams) (*authdto.ResponseUserDTO, error) {
-	uService := userservice.New(s.ctx, s.repo)
+func (s *service) SignupHandler(body *userdto.CreateUserParams) (*authdto.ResponseUserDTO, error) {
+	uservice := userservice.New(s.ctx, s.db).UserService()
 
-	//create user and generate jwt signed token
-	u, err := uService.Create(body)
-
+	// create user and generate jwt signed token
+	u, err := uservice.Create(body)
 	// send the signed token in both the request body and append it to the browser cookie
 	if err != nil {
 		return nil, err
@@ -67,7 +64,6 @@ func (s *Service) SignupHandler(body *userdto.CreateUserParams) (*authdto.Respon
 }
 
 func mapToUserDTO(user *userdto.UserInternalDTO) (*authdto.ResponseUserDTO, error) {
-
 	t, err := local_jwt.GenereteJWT(user.ID, *user.Name)
 	if err != nil {
 		return nil, err
@@ -86,14 +82,12 @@ func mapToUserDTO(user *userdto.UserInternalDTO) (*authdto.ResponseUserDTO, erro
 	}
 
 	return dto, nil
-
 }
 
 func isPasswordMatch(rawpass, hashpass string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hashpass), []byte(rawpass))
 
 	return err == nil
-
 }
 
 /*

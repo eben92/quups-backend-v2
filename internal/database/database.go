@@ -16,7 +16,8 @@ import (
 
 type Service interface {
 	Health() map[string]string
-	Repository() *repository.Queries
+	NewRepository() *repository.Queries
+	NewRawDB() *sql.DB
 }
 
 type service struct {
@@ -58,8 +59,17 @@ func NewService() Service {
 	return dbInstance
 }
 
-func (s *service) Repository() *repository.Queries {
+func (s *service) NewRepository() *repository.Queries {
 	return s.repository
+}
+
+func (s *service) NewRawDB() *sql.DB {
+	return s.db
+}
+
+type Repo struct {
+	Queries *repository.Queries
+	DB      *sql.DB
 }
 
 func (s *service) Health() map[string]string {

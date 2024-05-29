@@ -14,7 +14,7 @@ import (
 	"quups-backend/internal/utils"
 )
 
-func (s *Service) TestCreate(body *userdto.CreateUserParams) (*model.CreateUserParams, error) {
+func (s *service) TestCreate(body *userdto.CreateUserParams) (*model.CreateUserParams, error) {
 	if body.Name == "" {
 		return nil, fmt.Errorf("user name is required")
 	}
@@ -42,7 +42,7 @@ func (s *Service) TestCreate(body *userdto.CreateUserParams) (*model.CreateUserP
 	return u, nil
 }
 
-func (s *Service) createUserParams(
+func (s *service) createUserParams(
 	body *userdto.CreateUserParams,
 ) (*model.CreateUserParams, error) {
 	if body.Email == "" || body.Msisdn == "" {
@@ -82,7 +82,8 @@ func (s *Service) createUserParams(
 		},
 	}
 
-	u, _ := s.repo.GetUserByEmail(s.ctx, p.Email)
+	repo := s.db.NewRepository()
+	u, _ := repo.GetUserByEmail(s.ctx, p.Email)
 
 	if u.ID != "" {
 		log.Printf("User with email  [%s] already exist", body.Email)
@@ -94,7 +95,7 @@ func (s *Service) createUserParams(
 		p.Gender.Valid = true
 	}
 
-	u, _ = s.repo.GetUserByMsisdn(s.ctx, sql.NullString{
+	u, _ = repo.GetUserByMsisdn(s.ctx, sql.NullString{
 		String: body.Msisdn,
 		Valid:  true,
 	})
@@ -123,7 +124,7 @@ func (s *Service) createUserParams(
 	return p, nil
 }
 
-func (s *Service) Create(body *userdto.CreateUserParams) (*userdto.UserInternalDTO, error) {
+func (s *service) Create(body *userdto.CreateUserParams) (*userdto.UserInternalDTO, error) {
 	var user *userdto.UserInternalDTO
 	params, err := s.createUserParams(body)
 	if err != nil {
@@ -134,7 +135,8 @@ func (s *Service) Create(body *userdto.CreateUserParams) (*userdto.UserInternalD
 
 	log.Printf("about to create new user wih email [%s]", params.Email)
 
-	u, err := s.repo.CreateUser(s.ctx, *params)
+	repo := s.db.NewRepository()
+	u, err := repo.CreateUser(s.ctx, *params)
 	if err != nil {
 		log.Printf("error fetching user with email error:[%s]", err.Error())
 
@@ -158,11 +160,12 @@ func (s *Service) Create(body *userdto.CreateUserParams) (*userdto.UserInternalD
 this returns full user dto includinng password
 NOTE: response of ths should not be sent to the frontend/client
 */
-func (s *Service) FindByEmail(e string) (*userdto.UserInternalDTO, error) {
+func (s *service) FindByEmail(e string) (*userdto.UserInternalDTO, error) {
 	log.Printf("fetching user with email [%s]", e)
 	var user *userdto.UserInternalDTO
 
-	u, err := s.repo.GetUserByEmail(s.ctx, e)
+	repo := s.db.NewRepository()
+	u, err := repo.GetUserByEmail(s.ctx, e)
 	if err != nil {
 		log.Printf("error fetching user with email [%s] error: [%s]", e, err.Error())
 
@@ -180,11 +183,12 @@ func (s *Service) FindByEmail(e string) (*userdto.UserInternalDTO, error) {
 	return user, nil
 }
 
-func (s *Service) FindByID(id string) (*userdto.UserInternalDTO, error) {
+func (s *service) FindByID(id string) (*userdto.UserInternalDTO, error) {
 	log.Printf("fetching user with ID [%s] ", id)
 	var user *userdto.UserInternalDTO
 
-	u, err := s.repo.GetUserByID(s.ctx, id)
+	repo := s.db.NewRepository()
+	u, err := repo.GetUserByID(s.ctx, id)
 	if err != nil {
 		log.Printf("error fetching user with ID [%s] error: [%s]", id, err.Error())
 
@@ -202,7 +206,7 @@ func (s *Service) FindByID(id string) (*userdto.UserInternalDTO, error) {
 	return user, nil
 }
 
-func (s *Service) FindByMsisdn(msisdn string) (*userdto.UserInternalDTO, error) {
+func (s *service) FindByMsisdn(msisdn string) (*userdto.UserInternalDTO, error) {
 	log.Printf("fetching user with msisdn [%s]", msisdn)
 
 	if msisdn == "" {
@@ -219,8 +223,9 @@ func (s *Service) FindByMsisdn(msisdn string) (*userdto.UserInternalDTO, error) 
 
 		return nil, fmt.Errorf("Invalid phone number")
 	}
+	repo := s.db.NewRepository()
 
-	u, err := s.repo.GetUserByMsisdn(s.ctx, sql.NullString{
+	u, err := repo.GetUserByMsisdn(s.ctx, sql.NullString{
 		String: msisdn,
 		Valid:  true,
 	})
@@ -242,11 +247,12 @@ func (s *Service) FindByMsisdn(msisdn string) (*userdto.UserInternalDTO, error) 
 	return user, nil
 }
 
-func (s *Service) GetUserTeams(userId string) ([]*userdto.UserTeamDTO, error) {
+func (s *service) GetUserTeams(userId string) ([]*userdto.UserTeamDTO, error) {
 	log.Printf("getting user teams user: [%s]", userId)
+	repo := s.db.NewRepository()
 
 	teams := []*userdto.UserTeamDTO{}
-	t, err := s.repo.GetUserTeams(s.ctx, sql.NullString{
+	t, err := repo.GetUserTeams(s.ctx, sql.NullString{
 		String: userId,
 		Valid:  true,
 	})
@@ -265,11 +271,11 @@ func (s *Service) GetUserTeams(userId string) ([]*userdto.UserTeamDTO, error) {
 	return teams, nil
 }
 
-func (s *Service) Update(id string) {
+func (s *service) Update(id string) {
 	// todo:
 }
 
-func (s *Service) Delete(id string) {
+func (s *service) Delete(id string) {
 	// todo:
 }
 

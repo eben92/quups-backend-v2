@@ -34,8 +34,8 @@ func (s *Server) RegisterRoutes() http.Handler {
 	// protected routes
 	r.Group(func(pr chi.Router) {
 		pr.Use(local_jwt.Authenticator())
-
-		pr.Route("/companies", s.userController)
+		pr.Route("/user", s.userController)
+		pr.Route("/companies", s.companyController)
 	})
 
 	r.Get("/health", s.healthHandler)
@@ -43,19 +43,24 @@ func (s *Server) RegisterRoutes() http.Handler {
 }
 
 func (s *Server) authController(r chi.Router) {
-	handler := authcontroller.New(s.repository)
+	handler := authcontroller.New(&s.db)
 
 	r.Post("/signin", handler.Signin)
 	r.Post("/signup", handler.Signup)
 }
 
-func (s *Server) userController(r chi.Router) {
-	handler := usercontroller.New(s.repository)
+func (s *Server) companyController(r chi.Router) {
+	handler := usercontroller.NewCompanyController(&s.db)
 
 	r.Post("/", handler.CreateCompany)
 	r.Get("/", handler.GetAllCompanies)
 	r.Get("/{id}", handler.GetCompanyByID)
 	r.Get("/name/{name}", handler.GetCompanyByName)
+}
+
+func (s *Server) userController(r chi.Router) {
+	handler := usercontroller.NewUserController(&s.db)
+
 	r.Get("/teams", handler.GetUserTeams)
 }
 
