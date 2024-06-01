@@ -132,7 +132,7 @@ func (s *service) CreateCompany(
 
 	userId := local_jwt.GetAuthContext(s.ctx).Sub
 
-	_, err = s.CreateUserTeam(userId, nc.ID)
+	_, err = s.CreateUserTeam(userId, nc.ID, qtx)
 
 	if err != nil {
 		return nil, err

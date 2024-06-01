@@ -271,17 +271,16 @@ func (s *service) GetUserTeams(userId string) ([]*userdto.UserTeamDTO, error) {
 	return teams, nil
 }
 
-func (s *service) CreateUserTeam(userId, companyId string) (*model.Member, error) {
-	log.Println("about to create user team")
+func (s *service) CreateUserTeam(userId, companyId string, qtx *model.Queries) (*model.Member, error) {
+	log.Printf("about to create user team for company: [%s] --- user [%s]", companyId, userId)
 
 	u, err := s.FindByID(userId)
 	if err != nil {
 		return nil, err
+
 	}
 
-	repo := s.db.NewRepository()
-
-	t, err := repo.AddMember(s.ctx, model.AddMemberParams{
+	payload := model.AddMemberParams{
 		CompanyID: companyId,
 		UserID: sql.NullString{
 			String: u.ID,
@@ -295,12 +294,35 @@ func (s *service) CreateUserTeam(userId, companyId string) (*model.Member, error
 		Msisdn: *u.Msisdn,
 		Role:   "OWNER",
 		Status: "APPROVED",
-	})
-	if err != nil {
-		return nil, err
 	}
 
-	return &t, nil
+	var m model.Member
+
+	log.Println(m)
+
+	if qtx != nil {
+
+		m, err = qtx.AddMember(s.ctx, payload)
+
+		if err != nil {
+
+			fmt.Println(err)
+			return nil, err
+		}
+
+	} else {
+
+		repo := s.db.NewRepository()
+		m, err = repo.AddMember(s.ctx, payload)
+		if err != nil {
+
+			fmt.Println(err)
+			return nil, err
+		}
+
+	}
+
+	return &m, nil
 }
 
 func (s *service) Update(id string) {

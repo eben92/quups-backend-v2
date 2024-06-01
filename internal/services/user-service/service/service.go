@@ -36,7 +36,7 @@ func srv(s *service) *service {
 
 type UserService interface {
 	GetUserTeams(userId string) ([]*userdto.UserTeamDTO, error)
-	CreateUserTeam(userId, companyId string) (*repository.Member, error)
+	CreateUserTeam(userId, companyId string, qtx *repository.Queries) (*repository.Member, error)
 	Create(body *userdto.CreateUserParams) (*userdto.UserInternalDTO, error)
 	FindByEmail(e string) (*userdto.UserInternalDTO, error)
 	FindByID(id string) (*userdto.UserInternalDTO, error)
