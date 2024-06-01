@@ -36,6 +36,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 		pr.Use(local_jwt.Authenticator())
 		pr.Route("/user", s.userController)
 		pr.Route("/companies", s.companyController)
+		pr.Route("/payments", s.paymentController)
 	})
 
 	r.Get("/health", s.healthHandler)
@@ -56,6 +57,13 @@ func (s *Server) companyController(r chi.Router) {
 	r.Get("/", handler.GetAllCompanies)
 	r.Get("/{id}", handler.GetCompanyByID)
 	r.Get("/name/{name}", handler.GetCompanyByName)
+}
+
+// payment controller
+func (s *Server) paymentController(r chi.Router) {
+	handler := usercontroller.NewPaymentController(s.db)
+
+	r.Get("/supported-banks", handler.GetBankList)
 }
 
 func (s *Server) userController(r chi.Router) {

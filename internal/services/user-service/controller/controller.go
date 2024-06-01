@@ -41,3 +41,13 @@ func NewUserController(db database.Service) userController {
 		db: db,
 	}
 }
+
+type paymentController interface {
+	GetBankList(w http.ResponseWriter, r *http.Request)
+}
+
+func NewPaymentController(db database.Service) paymentController {
+	return &controller{
+		db: db,
+	}
+}

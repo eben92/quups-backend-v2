@@ -143,6 +143,34 @@ func (s *service) CreateCompany(
 	return c, nil
 }
 
+func (s *service) CreatePaymentAccount() {
+
+	tx, err := s.db.NewRawDB().Begin()
+
+	if err != nil {
+		return
+	}
+
+	defer tx.Rollback()
+
+	qtx := s.db.NewRepository().WithTx(tx)
+
+	qtx.CreatePaymentAccount(s.ctx, model.CreatePaymentAccountParams{})
+
+}
+
+func (s *service) createPayoutAccount(qtx *model.Queries) {
+
+	qtx.CreatePayoutAccount(s.ctx, model.CreatePayoutAccountParams{})
+
+}
+
+func (s *service) createPaymentAccountDetails(qtx *model.Queries) {
+
+	qtx.CreatePaymentAccountDetails(s.ctx, model.CreatePaymentAccountDetailsParams{})
+
+}
+
 func (s *service) GetAllCompanies() ([]*userdto.CompanyInternalDTO, error) {
 	repo := s.db.NewRepository()
 	c, err := repo.GetAllCompanies(s.ctx)

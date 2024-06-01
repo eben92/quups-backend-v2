@@ -9,9 +9,26 @@ import (
 	userdto "quups-backend/internal/services/user-service/dto"
 )
 
+const (
+	FOOD    string = "FOOD"
+	FASHION string = "FASHION"
+)
+
+var BRAND_TYPES = []string{FOOD, FASHION}
+
+var (
+	invalidEmailErr  = errors.New("invalid email address.")
+	invalidMsisdnErr = errors.New("invalid phone number.")
+	invalidNameErr   = errors.New(
+		"name must be greater the 3 characters and excluding any special characters.",
+	)
+	invalidBrandTypeErr = errors.New("invalid brand type. expecting " + FOOD + " or " + FASHION)
+)
+
 type Service interface {
 	CompanyService() CompanyService
 	UserService() UserService
+	NewPaymentService() PaymentService
 }
 
 type service struct {
@@ -62,18 +79,11 @@ func (s *service) CompanyService() CompanyService {
 	return srv(s)
 }
 
-const (
-	FOOD    string = "FOOD"
-	FASHION string = "FASHION"
-)
+type PaymentService interface {
+	GetBankList() (*[]Bank, error)
+}
 
-var BRAND_TYPES = []string{FOOD, FASHION}
-
-var (
-	invalidEmailErr  = errors.New("invalid email address.")
-	invalidMsisdnErr = errors.New("invalid phone number.")
-	invalidNameErr   = errors.New(
-		"name must be greater the 3 characters and excluding any special characters.",
-	)
-	invalidBrandTypeErr = errors.New("invalid brand type. expecting " + FOOD + " or " + FASHION)
-)
+// Payment service
+func (s *service) NewPaymentService() PaymentService {
+	return srv(s)
+}
