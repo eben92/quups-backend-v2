@@ -43,14 +43,14 @@ func (s *Server) RegisterRoutes() http.Handler {
 }
 
 func (s *Server) authController(r chi.Router) {
-	handler := authcontroller.New(&s.db)
+	handler := authcontroller.New(s.db)
 
 	r.Post("/signin", handler.Signin)
 	r.Post("/signup", handler.Signup)
 }
 
 func (s *Server) companyController(r chi.Router) {
-	handler := usercontroller.NewCompanyController(&s.db)
+	handler := usercontroller.NewCompanyController(s.db)
 
 	r.Post("/", handler.CreateCompany)
 	r.Get("/", handler.GetAllCompanies)
@@ -59,7 +59,7 @@ func (s *Server) companyController(r chi.Router) {
 }
 
 func (s *Server) userController(r chi.Router) {
-	handler := usercontroller.NewUserController(&s.db)
+	handler := usercontroller.NewUserController(s.db)
 
 	r.Get("/teams", handler.GetUserTeams)
 }

@@ -10,7 +10,7 @@ import (
 //		NewCompanyController() Company
 //	}
 type controller struct {
-	db *database.Service
+	db database.Service
 }
 
 // fun New(db *database.Service) Controller {
@@ -26,7 +26,7 @@ type companyController interface {
 	GetAllCompanies(w http.ResponseWriter, r *http.Request)
 }
 
-func NewCompanyController(db *database.Service) companyController {
+func NewCompanyController(db database.Service) companyController {
 	return &controller{
 		db: db,
 	}
@@ -36,7 +36,7 @@ type userController interface {
 	GetUserTeams(w http.ResponseWriter, r *http.Request)
 }
 
-func NewUserController(db *database.Service) userController {
+func NewUserController(db database.Service) userController {
 	return &controller{
 		db: db,
 	}

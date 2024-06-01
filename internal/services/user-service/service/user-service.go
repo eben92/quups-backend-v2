@@ -271,6 +271,38 @@ func (s *service) GetUserTeams(userId string) ([]*userdto.UserTeamDTO, error) {
 	return teams, nil
 }
 
+func (s *service) CreateUserTeam(userId, companyId string) (*model.Member, error) {
+	log.Println("about to create user team")
+
+	u, err := s.FindByID(userId)
+	if err != nil {
+		return nil, err
+	}
+
+	repo := s.db.NewRepository()
+
+	t, err := repo.AddMember(s.ctx, model.AddMemberParams{
+		CompanyID: companyId,
+		UserID: sql.NullString{
+			String: u.ID,
+			Valid:  true,
+		},
+		Name: *u.Name,
+		Email: sql.NullString{
+			String: u.Email,
+			Valid:  true,
+		},
+		Msisdn: *u.Msisdn,
+		Role:   "OWNER",
+		Status: "APPROVED",
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &t, nil
+}
+
 func (s *service) Update(id string) {
 	// todo:
 }

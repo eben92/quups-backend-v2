@@ -15,7 +15,7 @@ import (
 )
 
 type Controller struct {
-	db *database.Service
+	db database.Service
 }
 
 const (
@@ -23,7 +23,7 @@ const (
 	success        = "success"
 )
 
-func New(db *database.Service) *Controller {
+func New(db database.Service) *Controller {
 	return &Controller{
 		db: db,
 	}

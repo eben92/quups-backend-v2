@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"quups-backend/internal/database"
+	"quups-backend/internal/database/repository"
 	userdto "quups-backend/internal/services/user-service/dto"
 )
 
@@ -19,9 +20,9 @@ type service struct {
 }
 
 // New function
-func New(c context.Context, db *database.Service) Service {
+func New(c context.Context, db database.Service) Service {
 	return &service{
-		db:  *db,
+		db:  db,
 		ctx: c,
 	}
 }
@@ -35,6 +36,7 @@ func srv(s *service) *service {
 
 type UserService interface {
 	GetUserTeams(userId string) ([]*userdto.UserTeamDTO, error)
+	CreateUserTeam(userId, companyId string) (*repository.Member, error)
 	Create(body *userdto.CreateUserParams) (*userdto.UserInternalDTO, error)
 	FindByEmail(e string) (*userdto.UserInternalDTO, error)
 	FindByID(id string) (*userdto.UserInternalDTO, error)

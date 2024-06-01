@@ -13,7 +13,7 @@ func (c *controller) GetUserTeams(w http.ResponseWriter, r *http.Request) {
 
 	claims := local_jwt.GetAuthContext(r.Context())
 
-	usrv := userservice.New(r.Context(), c.db)
+	usrv := userservice.New(r.Context(), c.db).UserService()
 
 	t, err := usrv.GetUserTeams(claims.Sub)
 	if err != nil {

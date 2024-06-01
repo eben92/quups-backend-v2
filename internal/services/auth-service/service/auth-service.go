@@ -20,10 +20,10 @@ const (
 
 type service struct {
 	ctx context.Context
-	db  *database.Service
+	db  database.Service
 }
 
-func New(ctx context.Context, db *database.Service) *service {
+func New(ctx context.Context, db database.Service) *service {
 	return &service{
 		ctx: ctx,
 		db:  db,

@@ -114,16 +114,32 @@ func (s *service) CreateCompany(
 		return nil, err
 	}
 
-	//  tx, err :=
-	nc, err := repo.CreateCompany(s.ctx, *params)
+	tx, err := s.db.NewRawDB().Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	defer tx.Rollback()
+
+	qtx := repo.WithTx(tx)
+
+	nc, err := qtx.CreateCompany(s.ctx, *params)
 	if err != nil {
 		log.Printf("error creating company. [%s]", err.Error())
 
 		return nil, errors.New("an error occured while creating company. please try again")
 	}
 
-	c := mapToCompanyInternalDTO(nc)
+	userId := local_jwt.GetAuthContext(s.ctx).Sub
 
+	_, err = s.CreateUserTeam(userId, nc.ID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	c := mapToCompanyInternalDTO(nc)
+	tx.Commit()
 	return c, nil
 }
 

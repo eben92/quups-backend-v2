@@ -18,10 +18,11 @@ INSERT INTO members (
         email,
         msisdn,
         role,
-        user_id
+        user_id,
+        status
     )
 VALUES (
-    $1, $2, $3, $4, $5, $6
+    $1, $2, $3, $4, $5, $6, $7
     )
 RETURNING id, name, msisdn, email, role, status, company_id, user_id, created_at, updated_at
 `
@@ -33,6 +34,7 @@ type AddMemberParams struct {
 	Msisdn    string         `json:"msisdn"`
 	Role      string         `json:"role"`
 	UserID    sql.NullString `json:"user_id"`
+	Status    string         `json:"status"`
 }
 
 func (q *Queries) AddMember(ctx context.Context, arg AddMemberParams) (Member, error) {
@@ -43,6 +45,7 @@ func (q *Queries) AddMember(ctx context.Context, arg AddMemberParams) (Member, e
 		arg.Msisdn,
 		arg.Role,
 		arg.UserID,
+		arg.Status,
 	)
 	var i Member
 	err := row.Scan(

@@ -5,10 +5,11 @@ INSERT INTO members (
         email,
         msisdn,
         role,
-        user_id
+        user_id,
+        status
     )
 VALUES (
-    $1, $2, $3, $4, $5, $6
+    $1, $2, $3, $4, $5, $6, $7
     )
 RETURNING *;
 
