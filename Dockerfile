@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM golang:1.22 as builder
+FROM golang:1.22
 
 # Set destination for COPY
 WORKDIR /app
@@ -8,24 +8,22 @@ WORKDIR /app
 # Download Go modules
 COPY go.mod go.sum ./
 RUN go mod download
+RUN go install github.com/pressly/goose/v3/cmd/goose@latest
 
-# Copy the source code including Go files, Makefile, and environment variables
-COPY . ./
+# Copy the source code. Note the slash at the end, as explained in
+# https://docs.docker.com/reference/dockerfile/#copy
+COPY *.go Makefile .env ./
+COPY internal/database/migrations/*.sql ./internal/database/migrations/ 
 
-# Copy migrations
-
-# Build the application
+# Build
 RUN CGO_ENABLED=0 GOOS=linux make build
 
-# Start a new stage to reduce the final image size
-FROM alpine:latest
-
-# Copy the binary from the builder stage
-COPY --from=builder /app/main /app/main
-
-# Expose the port
+# Optional:
+# To bind to a TCP port, runtime parameters must be supplied to the docker command.
+# But we can document in the Dockerfile what ports
+# the application is going to listen on by default.
+# https://docs.docker.com/reference/dockerfile/#expose
 EXPOSE 8080
 
-# Set the working directory and command to run the application
-WORKDIR /app
-CMD ["./main"]
+# Run
+CMD ["main"]
