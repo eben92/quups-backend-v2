@@ -1,0 +1,11 @@
+services:
+  app:
+    container_name: quups-backend
+    restart: "unless-stopped"
+    build: .
+      #  tags:
+      # - "quups-backend:latest" 
+    ports:
+      - 8080
+    env_file: ".env"
+

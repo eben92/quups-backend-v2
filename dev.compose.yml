@@ -1,5 +1,4 @@
 version: '3.8'
-
 services:
   psql:
     image: postgres:latest
@@ -14,3 +13,8 @@ services:
 
 volumes:
   psql_volume:
+
+include:
+- prod.compose.yml
+
+

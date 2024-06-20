@@ -1,5 +1,5 @@
 # Simple Makefile for a Go project
-include .env
+#include .env
 
 
 DATABASE_URL="postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_DATABASE)?sslmode=disable"
@@ -12,7 +12,7 @@ ec:
 	@goose $(GOOSE_DRIVER) "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USERNAME) password=$(DB_PASSWORD) dbname=$(DB_DATABASE) sslmode=disable" status
 
 # Build the application
-all: build
+all: db-migrate-up build
 
 build:
 	@echo "Building..."
@@ -22,6 +22,17 @@ build:
 # Run the application
 run:
 	@go run cmd/api/main.go
+
+prod-run:
+	@echo "deploying production instance..."
+	@docker compose -f prod.compose.yml up -d
+	@echo "app has been deployed successfully"	
+
+
+dev-run:
+	@echo "deploying dev instance..."
+	@docker compose -f dev.compose.yml up -d
+
 
 # Create DB container
 docker-run:
