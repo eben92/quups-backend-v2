@@ -2,10 +2,12 @@ services:
   app:
     container_name: quups-backend
     restart: "unless-stopped"
-    build: .
-      #  tags:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+        #  tags:
       # - "quups-backend:latest" 
     ports:
-      - 8080
+      - "8080:8080"
     env_file: ".env"
 

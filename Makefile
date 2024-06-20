@@ -1,5 +1,5 @@
 # Simple Makefile for a Go project
-#include .env
+include .env
 
 
 DATABASE_URL="postgres://$(DB_USERNAME):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_DATABASE)?sslmode=disable"
@@ -31,8 +31,11 @@ prod-run:
 
 dev-run:
 	@echo "deploying dev instance..."
-	@docker compose -f dev.compose.yml up -d
+	@docker compose -f dev.compose.yml up --build -d
 
+dev-down:
+	@echo "deploying dev instance..."
+	@docker compose -f dev.compose.yml down
 
 # Create DB container
 docker-run:
