@@ -12,8 +12,7 @@ RUN go install github.com/pressly/goose/v3/cmd/goose@latest
 
 # Copy the source code. Note the slash at the end, as explained in
 # https://docs.docker.com/reference/dockerfile/#copy
-COPY *.go Makefile .env ./
-COPY internal/database/migrations/*.sql ./internal/database/migrations/ 
+COPY . ./
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux make build
@@ -26,4 +25,4 @@ RUN CGO_ENABLED=0 GOOS=linux make build
 EXPOSE 8080
 
 # Run
-CMD ["main"]
+CMD ["./main"]

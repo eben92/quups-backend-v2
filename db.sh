@@ -29,10 +29,10 @@ install_goose() {
 }
 
 # Install go if it doesnt exist before installing goose
-install_go
+#install_go
 
 # Install goose if not installed
-install_goose
+#install_goose
 
 # Set database URL and run goose migrations
 DATABASE_URL="postgres://${DB_USERNAME}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_DATABASE}?sslmode=disable"
