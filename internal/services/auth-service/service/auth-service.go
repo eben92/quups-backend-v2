@@ -1,46 +1,33 @@
 package authservice
 
 import (
-	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
 	"golang.org/x/crypto/bcrypt"
 
-	"quups-backend/internal/database"
 	authdto "quups-backend/internal/services/auth-service/dto"
 	userdto "quups-backend/internal/services/user-service/dto"
 	userservice "quups-backend/internal/services/user-service/service"
+	"quups-backend/internal/utils"
 	local_jwt "quups-backend/internal/utils/jwt"
 )
 
-const (
-	incorrectpass = "incorrect phone number or password"
-)
+func (s *service) Signin(body authdto.SignInRequestDTO) (authdto.ResponseUserDTO, error) {
+	result := authdto.ResponseUserDTO{}
+	uservice := userservice.NewUserService(s.ctx, s.db)
 
-type service struct {
-	ctx context.Context
-	db  database.Service
-}
+	msisdn, _ := utils.ParseMsisdn(body.Msisdn)
 
-func New(ctx context.Context, db database.Service) *service {
-	return &service{
-		ctx: ctx,
-		db:  db,
-	}
-}
+	u, err := uservice.FindByMsisdn(msisdn)
 
-func (s *service) SigninHandler(body *authdto.SignInRequestDTO) (*authdto.ResponseUserDTO, error) {
-	uservice := userservice.New(s.ctx, s.db).UserService()
-
-	u, err := uservice.FindByMsisdn(body.Msisdn)
 	if err != nil {
-		return nil, fmt.Errorf(incorrectpass)
+		return result, fmt.Errorf(incorrectpass)
 	}
 
-	if !isPasswordMatch(body.Password, *u.Password) {
-		log.Printf("incorrect password for [%s]", body.Msisdn)
-		return nil, fmt.Errorf(incorrectpass)
+	if !isPasswordMatch(body.Password, u.Password) {
+		slog.Error("incorrect password for ", "Errors", body.Msisdn)
+		return result, fmt.Errorf(incorrectpass)
 	}
 
 	user, _ := mapToUserDTO(u)
@@ -48,37 +35,47 @@ func (s *service) SigninHandler(body *authdto.SignInRequestDTO) (*authdto.Respon
 	return user, nil
 }
 
-func (s *service) SignupHandler(body *userdto.CreateUserParams) (*authdto.ResponseUserDTO, error) {
-	uservice := userservice.New(s.ctx, s.db).UserService()
+func (s *service) Signup(body userdto.CreateUserParams) (authdto.ResponseUserDTO, error) {
+	uservice := userservice.NewUserService(s.ctx, s.db)
+	result := authdto.ResponseUserDTO{}
 
 	// create user and generate jwt signed token
 	u, err := uservice.Create(body)
 	// send the signed token in both the request body and append it to the browser cookie
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
-	user, _ := mapToUserDTO(u)
+	result, err = mapToUserDTO(u)
 
-	return user, nil
+	if err != nil {
+		return result, err
+	}
+
+	return result, nil
 }
 
-func mapToUserDTO(user *userdto.UserInternalDTO) (*authdto.ResponseUserDTO, error) {
-	t, err := local_jwt.GenereteJWT(user.ID, *user.Name)
+func mapToUserDTO(user userdto.UserInternalDTO) (authdto.ResponseUserDTO, error) {
+	result := authdto.ResponseUserDTO{}
+
+	t, err := local_jwt.GenereteJWT(user.ID, user.Name)
+
 	if err != nil {
-		return nil, err
+		slog.Error("error generating jwt", "Error", err)
+
+		return result, err
 	}
 
 	tstring := string(t)
 
-	dto := &authdto.ResponseUserDTO{
+	dto := authdto.ResponseUserDTO{
 		ID:          user.ID,
 		Email:       user.Email,
 		Name:        user.Name,
 		Msisdn:      user.Msisdn,
 		ImageUrl:    user.ImageUrl,
 		Gender:      user.Gender,
-		AccessToken: &tstring,
+		AccessToken: tstring,
 	}
 
 	return dto, nil
@@ -89,30 +86,3 @@ func isPasswordMatch(rawpass, hashpass string) bool {
 
 	return err == nil
 }
-
-/*
-Generetes a signed token and return as byte or nil.
-Convert to string before sending to client
-*/
-// func genereteJWT(ID, name string) ([]byte, error) {
-
-// 	// Create a new token object, specifying signing method and the claims
-// 	// you would like it to contain.
-// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-// 		"sub":    ID,
-// 		"issuer": "WEB",
-// 		"name":   name,
-// 		"exp":    time.Now().Add(time.Hour * 24 * 30).Unix(),
-// 	})
-
-// 	// Sign and get the complete encoded token as a string using the secret
-// 	tokenString, err := token.SignedString([]byte(JWT_SECRET))
-
-// 	if err != nil {
-// 		log.Printf("Error signing jwt [%s]", err.Error())
-
-// 		return nil, fmt.Errorf("Something went wrong. Please try again. #2")
-// 	}
-
-// 	return []byte(tokenString), nil
-// }
