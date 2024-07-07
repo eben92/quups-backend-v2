@@ -25,6 +25,7 @@ var (
 	invalidBrandTypeErr = errors.New("invalid brand type. expecting " + FOOD + " or " + FASHION)
 )
 
+// Service represents the interface for the user service.
 type Service interface {
 	CompanyService() CompanyService
 	UserService() UserService
@@ -44,46 +45,64 @@ func New(c context.Context, db database.Service) Service {
 	}
 }
 
-func srv(s *service) *service {
+func serviceProvider(s *service) *service {
 	return &service{
 		db:  s.db,
 		ctx: s.ctx,
 	}
 }
 
+// UserService represents the interface for user-related operations.
 type UserService interface {
-	GetUserTeams(userId string) ([]*userdto.UserTeamDTO, error)
-	CreateUserTeam(userId, companyId string, qtx *repository.Queries) (*repository.Member, error)
-	Create(body *userdto.CreateUserParams) (*userdto.UserInternalDTO, error)
-	FindByEmail(e string) (*userdto.UserInternalDTO, error)
-	FindByID(id string) (*userdto.UserInternalDTO, error)
-	FindByMsisdn(msisdn string) (*userdto.UserInternalDTO, error)
+	// GetUserTeams retrieves the teams that a user belongs to.
+	GetUserTeams(userId string) ([]userdto.UserTeamDTO, error)
+
+	// CreateUserTeam creates a new user team for a given company.
+	CreateUserTeam(companyId string) (repository.Member, error)
+
+	// Create creates a new user with the provided parameters.
+	Create(body userdto.CreateUserParams) (userdto.UserInternalDTO, error)
+
+	// FindByEmail retrieves a user by their email address.
+	FindByEmail(e string) (userdto.UserInternalDTO, error)
+
+	// FindByID retrieves a user by their ID.
+	FindByID(id string) (userdto.UserInternalDTO, error)
+
+	// FindByMsisdn retrieves a user by their MSISDN (mobile number).
+	FindByMsisdn(msisdn string) (userdto.UserInternalDTO, error)
 }
 
 // UserService method returns User service interface
 func (s *service) UserService() UserService {
-	return srv(s)
+	return serviceProvider(s)
 }
 
+// CompanyService represents the interface for managing company-related operations.
 type CompanyService interface {
-	CreateCompany(
-		body *userdto.CreateCompanyParams,
-	) (*userdto.CompanyInternalDTO, error)
-	GetAllCompanies() ([]*userdto.CompanyInternalDTO, error)
-	GetCompanyByName(name string) (*userdto.CompanyInternalDTO, error)
-	GetCompanyByID(name string) (*userdto.CompanyInternalDTO, error)
+	// CreateCompany creates a new company with the given parameters and returns the created company's internal DTO.
+	CreateCompany(body userdto.CreateCompanyParams) (userdto.CompanyInternalDTO, error)
+
+	// GetAllCompanies retrieves all companies and returns a slice of company internal DTOs.
+	GetAllCompanies() ([]userdto.CompanyInternalDTO, error)
+
+	// GetCompanyByName retrieves a company by its name and returns the company's internal DTO.
+	GetCompanyByName(name string) (userdto.CompanyInternalDTO, error)
+
+	// GetCompanyByID retrieves a company by its ID and returns the company's internal DTO.
+	GetCompanyByID(id string) (userdto.CompanyInternalDTO, error)
 }
 
 // CompanyService method
 func (s *service) CompanyService() CompanyService {
-	return srv(s)
+	return serviceProvider(s)
 }
 
 type PaymentService interface {
-	GetBankList() (*[]Bank, error)
+	GetBankList() ([]Bank, error)
 }
 
 // Payment service
 func (s *service) NewPaymentService() PaymentService {
-	return srv(s)
+	return serviceProvider(s)
 }
