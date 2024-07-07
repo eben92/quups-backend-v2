@@ -10,8 +10,7 @@ import (
 func (c *controller) GetBankList(w http.ResponseWriter, r *http.Request) {
 
 	response := apiutils.New(w, r)
-
-	s := userservice.New(r.Context(), c.db).NewPaymentService()
+	s := userservice.NewPaymentService(r.Context(), c.db)
 
 	res, err := s.GetBankList()
 
