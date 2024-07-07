@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	COOKIE_NAME string = "qp_session"
+	COOKIE_NAME string = "qp-session"
 )
 
 var (

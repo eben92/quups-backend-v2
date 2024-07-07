@@ -20,9 +20,10 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Use(middleware.CleanPath)
 	r.Use(middleware.AllowContentType("application/json"))
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"https://*", "http://*"},
+		// AllowedOrigins:   []string{"https://vendor.quups.app"},
+		AllowedOrigins:   []string{"http://localhost:4173", "http://localhost:5173"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "Accept-Encoding"},
 		AllowCredentials: true,
 	}))
 
