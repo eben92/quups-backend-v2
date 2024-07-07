@@ -10,6 +10,7 @@ import (
 
 	userdto "quups-backend/internal/services/user-service/dto"
 	userservice "quups-backend/internal/services/user-service/service"
+	"quups-backend/internal/utils"
 	apiutils "quups-backend/internal/utils/api"
 )
 
@@ -135,5 +136,72 @@ func (c *controller) GetCompanyByName(w http.ResponseWriter, r *http.Request) {
 		StatusCode: http.StatusOK,
 		Message:    "success",
 		Results:    co,
+	})
+}
+
+// GET: /companies/name/exists?name=""
+func (c *controller) GetCompanyNameAvailability(w http.ResponseWriter, r *http.Request) {
+	name := r.URL.Query().Get("name")
+	response := apiutils.New(w, r)
+
+	type Response struct {
+		Message      string `json:"message"`
+		Availability string `json:"availability"`
+	}
+
+	message := name + " already in use. please choose another"
+	availability := "NOT_AVAILABLE"
+
+	if name == "" {
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
+			StatusCode: http.StatusNotFound,
+			Message:    "name query params is required",
+			Results:    nil,
+		})
+		return
+	}
+
+	n, isvalid := utils.IsValidCompanyName(name)
+
+	if !isvalid {
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
+			StatusCode: http.StatusOK,
+			Message:    "Invalid store name. Please choose another",
+			Results: Response{
+				Message:      "Company name cannot contain space, special characters or accented letters.",
+				Availability: availability,
+			},
+		})
+		return
+	}
+
+	cmpsrv := userservice.NewCompanyService(r.Context(), c.db)
+
+	co, err := cmpsrv.GetCompanyByName(n)
+
+	if co.ID == "" {
+		message = n + " is available"
+		availability = "AVAILABLE"
+	}
+
+	res := Response{
+		Message:      message,
+		Availability: availability,
+	}
+
+	if err != nil {
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
+			StatusCode: http.StatusOK,
+			Message:    err.Error(),
+			Results:    res,
+		})
+
+		return
+	}
+
+	response.WrapInApiResponse(&apiutils.ApiResponseParams{
+		StatusCode: http.StatusOK,
+		Message:    "success",
+		Results:    res,
 	})
 }

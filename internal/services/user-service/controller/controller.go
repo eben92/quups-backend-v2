@@ -23,6 +23,7 @@ type companyController interface {
 	CreateCompany(w http.ResponseWriter, r *http.Request)
 	GetCompanyByID(w http.ResponseWriter, r *http.Request)
 	GetCompanyByName(w http.ResponseWriter, r *http.Request)
+	GetCompanyNameAvailability(w http.ResponseWriter, r *http.Request)
 	GetAllCompanies(w http.ResponseWriter, r *http.Request)
 }
 

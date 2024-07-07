@@ -59,6 +59,7 @@ func (s *Server) companyController(r chi.Router) {
 	r.Get("/", handler.GetAllCompanies)
 	r.Get("/{id}", handler.GetCompanyByID)
 	r.Get("/name/{name}", handler.GetCompanyByName)
+	r.Get("/name/exists", handler.GetCompanyNameAvailability)
 }
 
 // payment controller

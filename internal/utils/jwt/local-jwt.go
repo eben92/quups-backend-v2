@@ -48,6 +48,8 @@ func Authenticator() func(http.Handler) http.Handler {
 
 			findtokens := []func(*http.Request) string{GetTokenFromHeader, GetTokenFromCookie}
 
+			w.Header().Set("Content-Type", "application/json")
+
 			for _, fn := range findtokens {
 				token = fn(r)
 

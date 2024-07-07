@@ -44,10 +44,14 @@ func (s *service) createCompanyParams(body userdto.CreateCompanyParams) (model.C
 	msisdn, _ := utils.ParseMsisdn(body.Msisdn)
 
 	slog.Info(
-		"setting up params to create a new company with name, email, msisdn, by",
+		"setting up params to create a new company with",
+		"name",
 		body.Name,
+		"email",
 		body.Email,
+		"msisdn",
 		body.Msisdn,
+		"by",
 		auth_user.Sub,
 	)
 
@@ -106,6 +110,7 @@ func (s *service) createCompanyParams(body userdto.CreateCompanyParams) (model.C
 }
 
 func (s *service) CreateCompany(body userdto.CreateCompanyParams) (userdto.CompanyInternalDTO, error) {
+	slog.Info("about to create new company")
 	repo := s.db.NewRepository()
 	result := userdto.CompanyInternalDTO{}
 
@@ -140,6 +145,8 @@ func (s *service) CreateCompany(body userdto.CreateCompanyParams) (userdto.Compa
 
 	c := mapToCompanyInternalDTO(nc)
 	_ = tx.Commit()
+
+	slog.Info("company created successully")
 
 	return c, nil
 }
@@ -181,16 +188,21 @@ func (s *service) GetAllCompanies() ([]userdto.CompanyInternalDTO, error) {
 }
 
 func (s *service) GetCompanyByName(name string) (userdto.CompanyInternalDTO, error) {
+	slog.Info("about to fetch company ", "with name", name)
+
 	result := userdto.CompanyInternalDTO{}
+
 	repo := s.db.NewRepository()
 	res, err := repo.GetCompanyByName(s.ctx, name)
 
 	if err != nil {
-		slog.Error("fetching company with name", "Error", err)
+		slog.Error("fetching company", "Error", err)
 		return result, fmt.Errorf("company with name: [%s] not found", name)
 	}
 
 	result = mapToCompanyInternalDTO(res)
+
+	slog.Info("company retrieved successfully")
 
 	return result, nil
 }
