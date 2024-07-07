@@ -29,7 +29,7 @@ func ValidateCreateCompanyQParams(body userdto.CreateCompanyParams) error {
 		return invalidNameErr
 	}
 
-	_, validmsisdn := utils.IsValidMsisdn(body.Msisdn)
+	_, validmsisdn := utils.ParseMsisdn(body.Msisdn)
 	if !validmsisdn {
 		return invalidMsisdnErr
 	}
@@ -41,7 +41,7 @@ func (s *service) createCompanyParams(body userdto.CreateCompanyParams) (model.C
 	auth_user := local_jwt.GetAuthContext(s.ctx)
 
 	cname, _ := utils.IsValidCompanyName(body.Name)
-	msisdn, _ := utils.IsValidMsisdn(body.Msisdn)
+	msisdn, _ := utils.ParseMsisdn(body.Msisdn)
 
 	slog.Info(
 		"setting up params to create a new company with name, email, msisdn, by",
