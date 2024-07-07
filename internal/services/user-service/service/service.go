@@ -7,6 +7,7 @@ import (
 	"quups-backend/internal/database"
 	"quups-backend/internal/database/repository"
 	userdto "quups-backend/internal/services/user-service/dto"
+	"quups-backend/internal/utils"
 )
 
 const (
@@ -25,37 +26,15 @@ var (
 	invalidBrandTypeErr = errors.New("invalid brand type. expecting " + FOOD + " or " + FASHION)
 )
 
-// Service represents the interface for the user service.
-type Service interface {
-	CompanyService() CompanyService
-	UserService() UserService
-	NewPaymentService() PaymentService
-}
-
 type service struct {
 	db  database.Service
 	ctx context.Context
 }
 
-// New function
-func New(c context.Context, db database.Service) Service {
-	return &service{
-		db:  db,
-		ctx: c,
-	}
-}
-
-func serviceProvider(s *service) *service {
-	return &service{
-		db:  s.db,
-		ctx: s.ctx,
-	}
-}
-
 // UserService represents the interface for user-related operations.
 type UserService interface {
 	// GetUserTeams retrieves the teams that a user belongs to.
-	GetUserTeams(userId string) ([]userdto.UserTeamDTO, error)
+	GetUserTeams() ([]userdto.UserTeamDTO, error)
 
 	// CreateUserTeam creates a new user team for a given company.
 	CreateUserTeam(companyId string) (repository.Member, error)
@@ -64,18 +43,21 @@ type UserService interface {
 	Create(body userdto.CreateUserParams) (userdto.UserInternalDTO, error)
 
 	// FindByEmail retrieves a user by their email address.
-	FindByEmail(e string) (userdto.UserInternalDTO, error)
+	FindByEmail(email string) (userdto.UserInternalDTO, error)
 
 	// FindByID retrieves a user by their ID.
-	FindByID(id string) (userdto.UserInternalDTO, error)
+	FindByID() (userdto.UserInternalDTO, error)
 
 	// FindByMsisdn retrieves a user by their MSISDN (mobile number).
-	FindByMsisdn(msisdn string) (userdto.UserInternalDTO, error)
+	FindByMsisdn(msisdn utils.Msisdn) (userdto.UserInternalDTO, error)
 }
 
 // UserService method returns User service interface
-func (s *service) UserService() UserService {
-	return serviceProvider(s)
+func NewUserService(c context.Context, db database.Service) UserService {
+	return &service{
+		db:  db,
+		ctx: c,
+	}
 }
 
 // CompanyService represents the interface for managing company-related operations.
@@ -94,15 +76,23 @@ type CompanyService interface {
 }
 
 // CompanyService method
-func (s *service) CompanyService() CompanyService {
-	return serviceProvider(s)
+func NewCompanyService(c context.Context, db database.Service) CompanyService {
+	return &service{
+		db:  db,
+		ctx: c,
+	}
 }
 
+// PaymentService provides methods for interacting with payment services.
 type PaymentService interface {
+	// GetBankList returns a list of supported banks.
 	GetBankList() ([]Bank, error)
 }
 
 // Payment service
-func (s *service) NewPaymentService() PaymentService {
-	return serviceProvider(s)
+func NewPaymentService(c context.Context, db database.Service) PaymentService {
+	return &service{
+		db:  db,
+		ctx: c,
+	}
 }

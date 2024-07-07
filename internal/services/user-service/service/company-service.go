@@ -55,7 +55,7 @@ func (s *service) createCompanyParams(body userdto.CreateCompanyParams) (model.C
 		ID:           utils.GenerateIntID(6),
 		Email:        body.Email,
 		Name:         cname,
-		Msisdn:       msisdn,
+		Msisdn:       string(msisdn),
 		Slug:         strings.ToLower(strings.ReplaceAll(cname, " ", "-")),
 		CurrencyCode: "GHS",
 		IsActive:     false,
@@ -71,16 +71,16 @@ func (s *service) createCompanyParams(body userdto.CreateCompanyParams) (model.C
 	// TODO: check invitationCode
 
 	if c, _ := s.GetCompanyByID(p.ID); c.ID != "" {
-		slog.Warn("company id already exist. used by", c.Name)
+		slog.Warn("company id already exist. used", "BY", c.Name)
 		slog.Info("generating new company id")
 
 		p.ID = utils.GenerateIntID(6)
 
-		slog.Info("new company id generated", p.ID)
+		slog.Info("new company id generated", "id", p.ID)
 	}
 
 	if c, _ := s.GetCompanyByName(body.Name); c.ID != "" {
-		slog.Warn("company name already exist  [%s]", body.Name)
+		slog.Warn("company name already exist ", "Warn", body.Name)
 
 		return p, errors.New("company already in use. Please choose another one")
 	}
@@ -138,42 +138,27 @@ func (s *service) CreateCompany(body userdto.CreateCompanyParams) (userdto.Compa
 
 	// _, err = s.CreateUserTeam(userId, nc.ID, qtx)
 
-	if err != nil {
-		return result, err
-	}
-
 	c := mapToCompanyInternalDTO(nc)
-	tx.Commit()
+	_ = tx.Commit()
+
 	return c, nil
 }
 
 func (s *service) CreatePaymentAccount() {
 
-	tx, err := s.db.NewRawDB().Begin()
-
-	if err != nil {
-		return
-	}
-
-	defer tx.Rollback()
-
-	qtx := s.db.NewRepository().WithTx(tx)
-
-	qtx.CreatePaymentAccount(s.ctx, model.CreatePaymentAccountParams{})
-
 }
 
-func (s *service) createPayoutAccount(qtx *model.Queries) {
+// func (s *service) createPayoutAccount(qtx model.Queries) {
 
-	qtx.CreatePayoutAccount(s.ctx, model.CreatePayoutAccountParams{})
+// 	qtx.CreatePayoutAccount(s.ctx, model.CreatePayoutAccountParams{})
 
-}
+// }
 
-func (s *service) createPaymentAccountDetails(qtx *model.Queries) {
+// func (s *service) createPaymentAccountDetails(qtx model.Queries) {
 
-	qtx.CreatePaymentAccountDetails(s.ctx, model.CreatePaymentAccountDetailsParams{})
+// 	qtx.CreatePaymentAccountDetails(s.ctx, model.CreatePaymentAccountDetailsParams{})
 
-}
+// }
 
 func (s *service) GetAllCompanies() ([]userdto.CompanyInternalDTO, error) {
 	repo := s.db.NewRepository()
@@ -228,39 +213,39 @@ func (s *service) GetCompanyByID(id string) (userdto.CompanyInternalDTO, error) 
 
 func mapToCompanyInternalDTO(c model.Company) userdto.CompanyInternalDTO {
 	dto := userdto.CompanyInternalDTO{
-		ID:     c.ID,
-		Name:   c.Name,
-		Email:  c.Email,
-		Msisdn: c.Msisdn,
-		// About:          &c.About.String,
-		// ImageUrl:       &c.ImageUrl.String,
-		// BannerUrl:      &c.BannerUrl.String,
-		// Tin:            &c.Tin.String,
-		BrandType:    c.BrandType,
-		OwnerID:      c.OwnerID,
-		CurrencyCode: c.CurrencyCode,
-		// InvitationCode: &c.InvitationCode.String,
-		Slug:       c.Slug,
-		TotalSales: c.TotalSales,
-		IsActive:   c.IsActive,
-		CreatedAt:  c.CreatedAt,
-		UpdatedAt:  c.UpdatedAt,
+		ID:             c.ID,
+		Name:           c.Name,
+		Email:          c.Email,
+		Msisdn:         c.Msisdn,
+		About:          c.About.String,
+		ImageUrl:       c.ImageUrl.String,
+		BannerUrl:      c.BannerUrl.String,
+		Tin:            c.Tin.String,
+		BrandType:      c.BrandType,
+		OwnerID:        c.OwnerID,
+		CurrencyCode:   c.CurrencyCode,
+		InvitationCode: c.InvitationCode.String,
+		Slug:           c.Slug,
+		TotalSales:     c.TotalSales,
+		IsActive:       c.IsActive,
+		CreatedAt:      c.CreatedAt,
+		UpdatedAt:      c.UpdatedAt,
 	}
 
 	if c.About.Valid {
-		dto.About = &c.About.String
+		dto.About = c.About.String
 	}
 
 	if c.ImageUrl.Valid {
-		dto.ImageUrl = &c.ImageUrl.String
+		dto.ImageUrl = c.ImageUrl.String
 	}
 
 	if c.BannerUrl.Valid {
-		dto.BannerUrl = &c.BannerUrl.String
+		dto.BannerUrl = c.BannerUrl.String
 	}
 
 	if c.Tin.Valid {
-		dto.Tin = &c.Tin.String
+		dto.Tin = c.Tin.String
 	}
 
 	return dto
