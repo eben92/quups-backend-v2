@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
@@ -12,6 +13,7 @@ import (
 	model "quups-backend/internal/database/repository"
 	userdto "quups-backend/internal/services/user-service/dto"
 	"quups-backend/internal/utils"
+	local_jwt "quups-backend/internal/utils/jwt"
 )
 
 func (s *service) TestCreate(body *userdto.CreateUserParams) (*model.CreateUserParams, error) {
@@ -42,52 +44,61 @@ func (s *service) TestCreate(body *userdto.CreateUserParams) (*model.CreateUserP
 	return u, nil
 }
 
-func (s *service) createUserParams(
-	body *userdto.CreateUserParams,
-) (*model.CreateUserParams, error) {
+func ValidateCreateUserQ(body userdto.CreateUserParams) error {
 	if body.Email == "" || body.Msisdn == "" {
-		return nil, fmt.Errorf("email and phone number is required")
+		return fmt.Errorf("email and phone number is required")
 	}
 
-	log.Printf(
-		"setting up params to create user with name, email and msisdn: [%s] [%s] [%s]",
-		body.Name,
-		body.Email,
-		body.Msisdn,
-	)
-
 	if len(strings.TrimSpace(body.Name)) < 3 {
-		return nil, fmt.Errorf("full name must be at least 5 characters.")
+		return fmt.Errorf("full name must be at least 5 characters.")
 	}
 
 	if !utils.IsVaildEmail(body.Email) {
-		return nil, invalidEmailErr
+		return invalidEmailErr
 	}
 
-	msisdn, isValidMsisdn := utils.IsValidMsisdn(body.Msisdn)
+	_, isValidMsisdn := utils.IsValidMsisdn(body.Msisdn)
 
 	if !isValidMsisdn {
-		return nil, invalidMsisdnErr
+		return invalidMsisdnErr
 	}
 
-	p := &model.CreateUserParams{
+	if len(body.Password) < 4 {
+		log.Printf("user entered an invalid password < 4 msisdn: [%s]", body.Msisdn)
+		return fmt.Errorf("password should be atleast 6 characters")
+	}
+
+	return nil
+
+}
+
+func (s *service) prepareUserParams(body userdto.CreateUserParams) (model.CreateUserParams, error) {
+
+	slog.Info("setting up params to create user with name,  msisdn:", body.Name, body.Msisdn)
+
+	p := model.CreateUserParams{
 		Email: body.Email,
 		Name: sql.NullString{
 			String: body.Name,
 			Valid:  true,
 		},
 		Msisdn: sql.NullString{
-			String: msisdn,
+			String: body.Msisdn,
 			Valid:  true,
 		},
 	}
 
-	repo := s.db.NewRepository()
-	u, _ := repo.GetUserByEmail(s.ctx, p.Email)
+	u, err := s.FindByEmail(p.Email)
+
+	if err != nil {
+		slog.Error("createUserParams - FindByEmail", "Error", err)
+
+		return p, fmt.Errorf("error creating account. Please try again")
+	}
 
 	if u.ID != "" {
-		log.Printf("User with email  [%s] already exist", body.Email)
-		return nil, fmt.Errorf("User with email [%s] already exist", body.Email)
+		slog.Error("User with email  already exist", "Error", body.Email)
+		return p, fmt.Errorf("User with email [%s] already exist", body.Email)
 	}
 
 	if body.Gender != "" {
@@ -95,169 +106,173 @@ func (s *service) createUserParams(
 		p.Gender.Valid = true
 	}
 
-	u, _ = repo.GetUserByMsisdn(s.ctx, sql.NullString{
-		String: body.Msisdn,
-		Valid:  true,
-	})
+	msidsn, _ := utils.IsValidMsisdn(body.Msisdn)
+
+	u, err = s.FindByMsisdn(msidsn)
+
+	if err != nil {
+		slog.Error("createUserParams - FindByMsisdn", "Error", err)
+		return p, fmt.Errorf("error creating account please try again")
+	}
 
 	if u.ID != "" {
-		log.Printf("User with msisdn [%s] already exist", body.Msisdn)
-		return nil, fmt.Errorf("Phone number [%s] already in use", body.Msisdn)
+		slog.Error("User with msisdn [%s] already exist", "Error", body.Msisdn)
+		return p, fmt.Errorf("Phone number [%s] already in use", body.Msisdn)
 	}
 
-	if body.Password != "" {
-
-		if len(body.Password) < 4 {
-			log.Printf("user entered an invalid password < 4 msisdn: [%s]", body.Msisdn)
-			return nil, fmt.Errorf("password should be atleast 6 characters")
-		}
-
-		hashpass, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
-		if err != nil {
-			return nil, fmt.Errorf("Something went wrong. Please try again. #1")
-		}
-
-		p.Password.String = string(hashpass)
-		p.Password.Valid = true
+	hashpass, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
+	if err != nil {
+		return p, fmt.Errorf("Something went wrong. Please try again. #1")
 	}
+
+	p.Password.String = string(hashpass)
+	p.Password.Valid = true
 
 	return p, nil
 }
 
-func (s *service) Create(body *userdto.CreateUserParams) (*userdto.UserInternalDTO, error) {
-	var user *userdto.UserInternalDTO
-	params, err := s.createUserParams(body)
-	if err != nil {
-		log.Printf("failed to create user error: [%s]", err.Error())
+func (s *service) Create(body userdto.CreateUserParams) (userdto.UserInternalDTO, error) {
+	slog.Info("about to create user", body.Name, body.Msisdn)
 
-		return nil, err
+	result := userdto.UserInternalDTO{}
+	params, err := s.prepareUserParams(body)
+
+	if err != nil {
+		slog.Error("failed to create user", "Error", err)
+
+		return result, err
 	}
 
-	log.Printf("about to create new user wih email [%s]", params.Email)
-
 	repo := s.db.NewRepository()
-	u, err := repo.CreateUser(s.ctx, *params)
+	u, err := repo.CreateUser(s.ctx, params)
 	if err != nil {
-		log.Printf("error fetching user with email error:[%s]", err.Error())
+		slog.Error("error creating user", "Error", err)
 
-		return nil, err
+		return result, err
 	}
 
 	if u.ID == "" {
-		log.Printf("failed to save data in db")
+		slog.Error("failed to save data in db")
 
-		return nil, fmt.Errorf("failed to create user. Please try again later")
+		return result, fmt.Errorf("failed to create user. Please try again later")
+	}
+
+	result = mapToUserInternalDTO(u)
+
+	slog.Info("new user created successfully", "-- name", params.Name)
+
+	return result, nil
+}
+
+// FindByEmail retrieves a user from the database based on the provided email.
+// It returns a UserInternalDTO and an error if any.
+func (s *service) FindByEmail(email string) (userdto.UserInternalDTO, error) {
+	slog.Info("fetching user with", " email: ", email)
+	result := userdto.UserInternalDTO{}
+
+	repo := s.db.NewRepository()
+	u, err := repo.GetUserByEmail(s.ctx, email)
+
+	if err != nil {
+		slog.Error("error fetching user", "Error", err)
+
+		return result, fmt.Errorf("no user found")
+	}
+
+	if u.ID == "" {
+		slog.Error("error fetching user", "Error", err)
+
+		return result, fmt.Errorf("no user found")
+	}
+
+	result = mapToUserInternalDTO(u)
+
+	slog.Info("user retrieved successfully")
+
+	return result, nil
+}
+
+// FindByID retrieves a user by their ID.
+// It returns the user's internal DTO (Data Transfer Object) and an error, if any.
+func (s *service) FindByID() (userdto.UserInternalDTO, error) {
+
+	userId := local_jwt.GetAuthContext(s.ctx).Sub
+
+	slog.Info("fetching user with", " ID: ", userId)
+	user := userdto.UserInternalDTO{}
+
+	repo := s.db.NewRepository()
+	u, err := repo.GetUserByID(s.ctx, userId)
+	if err != nil {
+		slog.Error("error fetching user with ID:  error: ", "Error", err)
+
+		return user, fmt.Errorf("no user found")
+	}
+
+	if u.ID == "" {
+		slog.Warn("user with id: does not exist", " ID: ", userId)
+
+		return user, fmt.Errorf("no user found")
 	}
 
 	user = mapToUserInternalDTO(u)
 
-	log.Printf("new user created successfully -- email: [%s]", params.Email)
+	slog.Info("user retrieved successfully")
 
 	return user, nil
 }
 
-/*
-this returns full user dto includinng password
-NOTE: response of ths should not be sent to the frontend/client
-*/
-func (s *service) FindByEmail(e string) (*userdto.UserInternalDTO, error) {
-	log.Printf("fetching user with email [%s]", e)
-	var user *userdto.UserInternalDTO
+// FindByMsisdn fetches a user by their MSISDN (Mobile Station International Subscriber Directory Number).
+// It takes an MSISDN as input and returns a UserInternalDTO and an error.
+// If the user is found, the UserInternalDTO is populated with the user's information.
+// If the user is not found, an error is returned.
+func (s *service) FindByMsisdn(msisdn utils.Msisdn) (userdto.UserInternalDTO, error) {
+	slog.Info("fetching user with  ", "msisdn:", msisdn)
 
-	repo := s.db.NewRepository()
-	u, err := repo.GetUserByEmail(s.ctx, e)
-	if err != nil {
-		log.Printf("error fetching user with email [%s] error: [%s]", e, err.Error())
+	result := userdto.UserInternalDTO{}
 
-		return nil, fmt.Errorf("no user found")
-	}
-
-	if u.ID == "" {
-		log.Printf("user with email [%s] does not exist", e)
-
-		return nil, fmt.Errorf("no user found")
-	}
-
-	user = mapToUserInternalDTO(u)
-
-	return user, nil
-}
-
-func (s *service) FindByID(id string) (*userdto.UserInternalDTO, error) {
-	log.Printf("fetching user with ID [%s] ", id)
-	var user *userdto.UserInternalDTO
-
-	repo := s.db.NewRepository()
-	u, err := repo.GetUserByID(s.ctx, id)
-	if err != nil {
-		log.Printf("error fetching user with ID [%s] error: [%s]", id, err.Error())
-
-		return nil, fmt.Errorf("no user found")
-	}
-
-	if u.ID == "" {
-		log.Printf("user with id [%s] does not exist", id)
-
-		return nil, fmt.Errorf("no user found")
-	}
-
-	user = mapToUserInternalDTO(u)
-
-	return user, nil
-}
-
-func (s *service) FindByMsisdn(msisdn string) (*userdto.UserInternalDTO, error) {
-	log.Printf("fetching user with msisdn [%s]", msisdn)
-
-	if msisdn == "" {
-		log.Printf("no msisdn provided")
-
-		return nil, fmt.Errorf("Phone number is required")
-	}
-
-	var user *userdto.UserInternalDTO
-	msisdn, isValidMsisdn := utils.IsValidMsisdn(msisdn)
-
-	if !isValidMsisdn {
-		log.Printf("error fetching user -- invalid msisdn [%s]", msisdn)
-
-		return nil, fmt.Errorf("Invalid phone number")
-	}
 	repo := s.db.NewRepository()
 
 	u, err := repo.GetUserByMsisdn(s.ctx, sql.NullString{
-		String: msisdn,
+		String: string(msisdn),
 		Valid:  true,
 	})
-	if err != nil {
-		log.Printf("error fetching user with msisdn [%s] error: [%s]", msisdn, err.Error())
 
-		return nil, fmt.Errorf("no user found")
+	if err != nil {
+		slog.Error("error fetching user with msisdn error:", "Error", err)
+
+		return result, fmt.Errorf("no user found")
 	}
 
 	if u.ID == "" {
-		log.Printf("user with msisdn [%s] does not exist", msisdn)
+		slog.Error("user does not exist:", "Error", "no user found")
 
-		return nil, fmt.Errorf("no user found.")
+		return result, fmt.Errorf("no user found.")
 	}
 
-	user = mapToUserInternalDTO(u)
-	log.Printf("user with msisdn [%s] found", msisdn)
+	result = mapToUserInternalDTO(u)
+	slog.Info("user retrieved successfully")
 
-	return user, nil
+	return result, nil
 }
 
-func (s *service) GetUserTeams(userId string) ([]*userdto.UserTeamDTO, error) {
-	log.Printf("getting user teams user: [%s]", userId)
-	repo := s.db.NewRepository()
+// GetUserTeams retrieves the teams associated with the user.
+// It returns a slice of userdto.UserTeamDTO and an error if any.
+func (s *service) GetUserTeams() ([]userdto.UserTeamDTO, error) {
 
-	teams := []*userdto.UserTeamDTO{}
+	userId := local_jwt.GetAuthContext(s.ctx).Sub
+
+	slog.Info("getting user teams", "user:", userId)
+	repo := s.db.NewRepository()
+	results := []userdto.UserTeamDTO{}
+
 	t, err := repo.GetUserTeams(s.ctx, sql.NullString{
 		String: userId,
 		Valid:  true,
 	})
+
 	if err != nil {
-		log.Printf("error fetching user teams err: [%s]", err.Error())
+		slog.Error("error fetching user teams err: ", "Error", err)
 
 		return nil, errors.New("could not find user teams")
 	}
@@ -265,18 +280,24 @@ func (s *service) GetUserTeams(userId string) ([]*userdto.UserTeamDTO, error) {
 	for _, tm := range t {
 		ut := mapToUserTeamInternalDTO(tm)
 
-		teams = append(teams, ut)
+		results = append(results, ut)
 	}
 
-	return teams, nil
+	slog.Info("user teams retrieved successfully")
+
+	return results, nil
 }
 
-func (s *service) CreateUserTeam(userId, companyId string, qtx *model.Queries) (*model.Member, error) {
-	log.Printf("about to create user team for company: [%s] --- user [%s]", companyId, userId)
+func (s *service) CreateUserTeam(companyId string) (model.Member, error) {
+	result := model.Member{}
 
-	u, err := s.FindByID(userId)
+	slog.Info("about to create user team for ", "company:", companyId)
+
+	u, err := s.FindByID()
 	if err != nil {
-		return nil, err
+
+		slog.Error("CreateUserTeam - FindByID", "Error", err)
+		return result, err
 
 	}
 
@@ -286,43 +307,29 @@ func (s *service) CreateUserTeam(userId, companyId string, qtx *model.Queries) (
 			String: u.ID,
 			Valid:  true,
 		},
-		Name: *u.Name,
+		Name: u.Name,
 		Email: sql.NullString{
 			String: u.Email,
 			Valid:  true,
 		},
-		Msisdn: *u.Msisdn,
+		Msisdn: u.Msisdn,
 		Role:   "OWNER",
 		Status: "APPROVED",
 	}
 
-	var m model.Member
+	repo := s.db.NewRepository()
 
-	log.Println(m)
+	result, err = repo.AddMember(s.ctx, payload)
 
-	if qtx != nil {
+	if err != nil {
 
-		m, err = qtx.AddMember(s.ctx, payload)
-
-		if err != nil {
-
-			fmt.Println(err)
-			return nil, err
-		}
-
-	} else {
-
-		repo := s.db.NewRepository()
-		m, err = repo.AddMember(s.ctx, payload)
-		if err != nil {
-
-			fmt.Println(err)
-			return nil, err
-		}
-
+		slog.Error("CreateUserTeam - AddMember", "Error", err)
+		return result, err
 	}
 
-	return &m, nil
+	slog.Info("user team created successfully")
+
+	return result, nil
 }
 
 func (s *service) Update(id string) {
@@ -333,42 +340,42 @@ func (s *service) Delete(id string) {
 	// todo:
 }
 
-func mapToUserInternalDTO(user model.User) *userdto.UserInternalDTO {
-	dto := &userdto.UserInternalDTO{
+func mapToUserInternalDTO(user model.User) userdto.UserInternalDTO {
+	dto := userdto.UserInternalDTO{
 		ID:    user.ID,
 		Email: user.Email,
 	}
 
 	if user.Name.Valid {
-		dto.Name = &user.Name.String
+		dto.Name = user.Name.String
 	}
 
 	if user.Msisdn.Valid {
-		dto.Msisdn = &user.Msisdn.String
+		dto.Msisdn = user.Msisdn.String
 	}
 
 	if user.ImageUrl.Valid {
-		dto.ImageUrl = &user.ImageUrl.String
+		dto.ImageUrl = user.ImageUrl.String
 	}
 
 	if user.Gender.Valid {
-		dto.Gender = &user.Gender.String
+		dto.Gender = user.Gender.String
 	}
 
 	if user.Password.Valid {
-		dto.Password = &user.Password.String
+		dto.Password = user.Password.String
 	}
 
 	return dto
 }
 
-func mapToUserTeamInternalDTO(t model.GetUserTeamsRow) *userdto.UserTeamDTO {
-	tm := &userdto.UserTeamDTO{
+func mapToUserTeamInternalDTO(t model.GetUserTeamsRow) userdto.UserTeamDTO {
+	tm := userdto.UserTeamDTO{
 		ID:        t.ID,
 		CompanyID: t.CompanyID,
 		Msisdn:    t.Msisdn,
 		Status:    t.Status,
-		Company: &userdto.TeamCompanyDTO{
+		Company: userdto.TeamCompanyDTO{
 			ID:    t.CompanyID,
 			Name:  t.CompanyName,
 			Email: t.CompanyEmail,
@@ -377,15 +384,15 @@ func mapToUserTeamInternalDTO(t model.GetUserTeamsRow) *userdto.UserTeamDTO {
 	}
 
 	if t.Email.Valid {
-		tm.Email = &t.Email.String
+		tm.Email = t.Email.String
 	}
 
 	if t.CompanyBannerUrl.Valid {
-		tm.Company.BannerUrl = &t.CompanyBannerUrl.String
+		tm.Company.BannerUrl = t.CompanyBannerUrl.String
 	}
 
 	if t.CompanyImageUrl.Valid {
-		tm.Company.ImageUrl = &t.CompanyImageUrl.String
+		tm.Company.ImageUrl = t.CompanyImageUrl.String
 	}
 
 	return tm
