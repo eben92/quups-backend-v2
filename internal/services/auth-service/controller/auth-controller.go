@@ -2,7 +2,7 @@ package authcontroller
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -10,6 +10,7 @@ import (
 	authdto "quups-backend/internal/services/auth-service/dto"
 	authservice "quups-backend/internal/services/auth-service/service"
 	userdto "quups-backend/internal/services/user-service/dto"
+	userservice "quups-backend/internal/services/user-service/service"
 	apiutils "quups-backend/internal/utils/api"
 	local_jwt "quups-backend/internal/utils/jwt"
 )
@@ -31,15 +32,15 @@ func New(db database.Service) *Controller {
 
 // POST: /auth/signin
 func (s *Controller) Signin(w http.ResponseWriter, r *http.Request) {
-	var body *authdto.SignInRequestDTO
-	aservice := authservice.New(r.Context(), s.db)
+	var body authdto.SignInRequestDTO
+	aservice := authservice.NewAuthService(r.Context(), s.db)
 	response := apiutils.New(w, r)
 
 	err := json.NewDecoder(r.Body).Decode(&body)
 	defer r.Body.Close()
 
 	if err != nil {
-		log.Printf("error decoding signin request body")
+		slog.Error("error decoding signin request body", "Error", err)
 
 		response.WrapInApiResponse(&apiutils.ApiResponseParams{
 			StatusCode: http.StatusBadRequest,
@@ -50,7 +51,7 @@ func (s *Controller) Signin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := aservice.SigninHandler(body)
+	user, err := aservice.Signin(body)
 	if err != nil {
 		response.WrapInApiResponse(&apiutils.ApiResponseParams{
 			StatusCode: http.StatusBadRequest,
@@ -62,26 +63,26 @@ func (s *Controller) Signin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	access_token := user.AccessToken
-	setCookie(w, *access_token)
+	setCookie(w, access_token)
 
 	response.WrapInApiResponse(&apiutils.ApiResponseParams{
 		StatusCode: http.StatusOK,
-		Results:    &user,
+		Results:    user,
 		Message:    success,
 	})
 }
 
 // POST: /auth/signup
 func (s *Controller) Signup(w http.ResponseWriter, r *http.Request) {
-	var body *userdto.CreateUserParams
-	aservice := authservice.New(r.Context(), s.db)
+	body := userdto.CreateUserParams{}
+	aservice := authservice.NewAuthService(r.Context(), s.db)
 	response := apiutils.New(w, r)
 
 	err := json.NewDecoder(r.Body).Decode(&body)
 	defer r.Body.Close()
 
 	if err != nil {
-		log.Printf("error decoding signin request body")
+		slog.Error("error decoding signin request body", "Error", err)
 
 		response.WrapInApiResponse(&apiutils.ApiResponseParams{
 			StatusCode: http.StatusBadRequest,
@@ -92,7 +93,20 @@ func (s *Controller) Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := aservice.SignupHandler(body)
+	if err := userservice.ValidateCreateUserQ(body); err != nil {
+		slog.Error("error decoding signin request body", "Error", err)
+
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
+			StatusCode: http.StatusBadRequest,
+			Results:    nil,
+			Message:    invalidRequest,
+		})
+
+		return
+	}
+
+	user, err := aservice.Signup(body)
+
 	if err != nil {
 		response.WrapInApiResponse(&apiutils.ApiResponseParams{
 			StatusCode: http.StatusBadRequest,
@@ -108,7 +122,7 @@ func (s *Controller) Signup(w http.ResponseWriter, r *http.Request) {
 
 	response.WrapInApiResponse(&apiutils.ApiResponseParams{
 		StatusCode: http.StatusCreated,
-		Results:    &user, // TODO: shoudld we take this out?
+		Results:    user, // TODO: shoudld we take this out?
 		Message:    success,
 	})
 }
