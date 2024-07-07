@@ -5,17 +5,14 @@ import (
 
 	userservice "quups-backend/internal/services/user-service/service"
 	apiutils "quups-backend/internal/utils/api"
-	local_jwt "quups-backend/internal/utils/jwt"
 )
 
 func (c *controller) GetUserTeams(w http.ResponseWriter, r *http.Request) {
 	response := apiutils.New(w, r)
+	usrv := userservice.NewUserService(r.Context(), c.db)
 
-	claims := local_jwt.GetAuthContext(r.Context())
+	t, err := usrv.GetUserTeams()
 
-	usrv := userservice.New(r.Context(), c.db).UserService()
-
-	t, err := usrv.GetUserTeams(claims.Sub)
 	if err != nil {
 
 		response.WrapInApiResponse(&apiutils.ApiResponseParams{
