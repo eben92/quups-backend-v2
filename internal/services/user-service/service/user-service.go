@@ -57,7 +57,7 @@ func ValidateCreateUserQ(body userdto.CreateUserParams) error {
 		return invalidEmailErr
 	}
 
-	_, isValidMsisdn := utils.IsValidMsisdn(body.Msisdn)
+	_, isValidMsisdn := utils.ParseMsisdn(body.Msisdn)
 
 	if !isValidMsisdn {
 		return invalidMsisdnErr
@@ -106,7 +106,7 @@ func (s *service) prepareUserParams(body userdto.CreateUserParams) (model.Create
 		p.Gender.Valid = true
 	}
 
-	msidsn, _ := utils.IsValidMsisdn(body.Msisdn)
+	msidsn, _ := utils.ParseMsisdn(body.Msisdn)
 
 	u, err = s.FindByMsisdn(msidsn)
 
