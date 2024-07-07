@@ -35,7 +35,7 @@ func NewServer() *http.Server {
 		WriteTimeout: 30 * time.Second,
 	}
 
-	slog.Info("Server started on port %d\n", "APP", port)
+	slog.Info("Server started on port", "APP", port)
 
 	return server
 }

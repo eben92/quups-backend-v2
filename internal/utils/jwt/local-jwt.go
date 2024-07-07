@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
+	apiutils "quups-backend/internal/utils/api"
 	"strings"
 	"time"
 
@@ -58,7 +59,15 @@ func Authenticator() func(http.Handler) http.Handler {
 
 			if token == "" {
 
-				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				// http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+				response := apiutils.New(w, r)
+
+				response.WrapInApiResponse(&apiutils.ApiResponseParams{
+					StatusCode: http.StatusUnauthorized,
+					Message:    http.StatusText(http.StatusUnauthorized),
+					Results:    nil,
+				})
+
 				return
 
 			}
@@ -66,14 +75,32 @@ func Authenticator() func(http.Handler) http.Handler {
 			c, err := ParseToken(token)
 			if err != nil {
 
-				http.Error(w, err.Error(), http.StatusUnauthorized)
+				// http.Error(w, err.Error(), http.StatusUnauthorized)
+
+				response := apiutils.New(w, r)
+
+				response.WrapInApiResponse(&apiutils.ApiResponseParams{
+					StatusCode: http.StatusUnauthorized,
+					Message:    err.Error(),
+					Results:    nil,
+				})
+
 				return
 			}
 
 			ctx, err := newContext(r.Context(), c)
 			if err != nil {
 
-				http.Error(w, err.Error(), http.StatusUnauthorized)
+				// http.Error(w, err.Error(), http.StatusUnauthorized)
+
+				response := apiutils.New(w, r)
+
+				response.WrapInApiResponse(&apiutils.ApiResponseParams{
+					StatusCode: http.StatusUnauthorized,
+					Message:    err.Error(),
+					Results:    nil,
+				})
+
 				return
 
 			}
@@ -89,7 +116,7 @@ func GetTokenFromHeader(r *http.Request) string {
 	bearer := r.Header.Get("Authorization")
 
 	if len(bearer) > 7 && strings.ToUpper(bearer[0:6]) == "BEARER" {
-		log.Println("got token from request head")
+		slog.Info("got token from request head")
 		return bearer[7:]
 	}
 
@@ -102,7 +129,7 @@ func GetTokenFromCookie(r *http.Request) string {
 		return ""
 	}
 
-	log.Printf("token found in cookie")
+	slog.Info("token found in cookie")
 
 	return cookie.Value
 }
@@ -124,7 +151,7 @@ func GenereteJWT(ID, name string) ([]byte, error) {
 	// Sign and get the complete encoded token as a string using the secret
 	tokenString, err := token.SignedString([]byte(JWT_SECRET))
 	if err != nil {
-		log.Printf("Error signing jwt [%s]", err.Error())
+		slog.Error("Error signing jwt", "Error", err)
 
 		return nil, fmt.Errorf("Something went wrong. Please try again. #2")
 	}
@@ -137,7 +164,7 @@ func ParseToken(tokenString string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, alg := token.Method.(*jwt.SigningMethodHMAC); !alg {
 
-			log.Printf("invalid token alg [%s]", token.Header["alg"])
+			slog.Warn("invalid token alg", "ParseToken", token.Header["alg"])
 
 			return nil, ErrAlgoInvalid
 		}
@@ -145,7 +172,7 @@ func ParseToken(tokenString string) (jwt.MapClaims, error) {
 		return []byte(JWT_SECRET), nil
 	})
 	if err != nil {
-		log.Printf("error parsing token [%s]", err.Error())
+		slog.Error("error parsing token [%s]", "Error", err)
 
 		return nil, err
 	}
