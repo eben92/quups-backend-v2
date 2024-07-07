@@ -34,7 +34,7 @@ func ReplacePrefix(s, prefix, with string) string {
 
 // eg. 0550404071 will be converted to 233550404071 in (bytes)
 //
-//	If msisdn doesn't start with prefix, msisdn is returned unchanged.
+//	If msisdn doesnt start with prefix, msisdn is returned unchanged.
 func ConvertToLocalMsisdn(msisdn string) ([]byte, error) {
 
 	if len(msisdn) < 9 || len(msisdn) > 13 {
@@ -51,19 +51,21 @@ func ConvertToLocalMsisdn(msisdn string) ([]byte, error) {
 	return []byte(msisdn), nil
 }
 
+type Msisdn string
+
 // IsValidMsisdn removes any local prefix in msisdn(+233 or 0), returns
 // the updated msisdn(233xxxx...) and a boolean value
 //   - true (if msisdn is not an empty string) otherwise false.
 //     If msisdn doesn't start with prefix, msisdn is returned unchanged.
-func IsValidMsisdn(msisdn string) (string, bool) {
+func IsValidMsisdn(msisdn string) (Msisdn, bool) {
 
 	m, err := ConvertToLocalMsisdn(msisdn)
 
 	if err != nil {
-		return string(m), false
+		return Msisdn(m), false
 	}
 
-	return string(m), true
+	return Msisdn(m), true
 }
 
 func IsVaildEmail(e string) bool {
