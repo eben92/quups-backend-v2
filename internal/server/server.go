@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
@@ -34,7 +35,7 @@ func NewServer() *http.Server {
 		WriteTimeout: 30 * time.Second,
 	}
 
-	fmt.Printf("Starting server on port %d\n", port)
+	slog.Info("Server started on port %d\n", "APP", port)
 
 	return server
 }
