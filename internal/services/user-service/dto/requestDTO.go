@@ -9,16 +9,16 @@ type CreateUserParams struct {
 }
 
 type CreateCompanyParams struct {
-	Name           string
-	Email          string
-	Msisdn         string
-	About          string
+	Name           string `json:"name,omitempty"`
+	Email          string `json:"email,omitempty"`
+	Msisdn         string `json:"msisdn,omitempty"`
+	About          string `json:"about,omitempty"`
 	ImageUrl       string `json:"image_url"`
 	BannerUrl      string `json:"banner_url"`
-	Tin            string
+	Tin            string `json:"tin,omitempty"`
 	BrandType      string `json:"brand_type"`
 	OwnerID        string
-	CurrencyCode   string `json:"currency_code"`
+	CurrencyCode   string `json:"currency_code,omitempty"`
 	InvitationCode string `json:"invitation_code"`
 	Slug           string
 }

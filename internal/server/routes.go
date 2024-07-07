@@ -20,27 +20,28 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Use(middleware.CleanPath)
 	r.Use(middleware.AllowContentType("application/json"))
 	r.Use(cors.Handler(cors.Options{
-		// AllowedOrigins:   []string{"https://vendor.quups.app"},
 		AllowedOrigins:   []string{"http://localhost:4173", "http://localhost:5173"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "Accept-Encoding"},
 		AllowCredentials: true,
 	}))
 
-	r.Get("/", s.HelloWorldHandler)
+	v1 := chi.NewRouter()
 
+	v1.Get("/", s.HelloWorldHandler)
 	// unprotected routes
-	r.Route("/auth", s.authController)
-
+	v1.Route("/auth", s.authController)
 	// protected routes
-	r.Group(func(pr chi.Router) {
+	v1.Group(func(pr chi.Router) {
 		pr.Use(local_jwt.Authenticator())
 		pr.Route("/user", s.userController)
 		pr.Route("/companies", s.companyController)
 		pr.Route("/payments", s.paymentController)
 	})
 
-	r.Get("/health", s.healthHandler)
+	v1.Get("/health", s.healthHandler)
+
+	r.Mount("/api/v1", v1)
 	return r
 }
 
