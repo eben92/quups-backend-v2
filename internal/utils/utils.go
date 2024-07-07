@@ -53,11 +53,11 @@ func ConvertToLocalMsisdn(msisdn string) ([]byte, error) {
 
 type Msisdn string
 
-// IsValidMsisdn removes any local prefix in msisdn(+233 or 0), returns
+// ParseMsisdn removes any local prefix in msisdn(+233 or 0), returns
 // the updated msisdn(233xxxx...) and a boolean value
 //   - true (if msisdn is not an empty string) otherwise false.
 //     If msisdn doesn't start with prefix, msisdn is returned unchanged.
-func IsValidMsisdn(msisdn string) (Msisdn, bool) {
+func ParseMsisdn(msisdn string) (Msisdn, bool) {
 
 	m, err := ConvertToLocalMsisdn(msisdn)
 
