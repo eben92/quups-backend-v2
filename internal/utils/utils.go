@@ -88,18 +88,18 @@ func GenerateIntID(size int) string {
 
 // IsValidCompanyName returns a slice of the string s and a bool,
 // with all leading and trailing white space removed, as defined by Unicode.
-func IsValidCompanyName(s string) (*string, bool) {
+func IsValidCompanyName(s string) (string, bool) {
 	s = strings.TrimSpace(s)
 
 	if len(s) < 3 {
-		return nil, false
+		return s, false
 	}
 
 	if includeSpecialChar(s) {
-		return nil, false
+		return s, false
 	}
 
-	return &s, true
+	return s, true
 }
 
 // func includeSpecialChar(s string) bool {
@@ -121,17 +121,21 @@ func includeSpecialChar(s string) bool {
 	return false
 }
 
+// isSpaceOrLetter checks if the given rune is a space or a letter.
+// It returns true if the rune is a space or a letter (uppercase or lowercase), and false otherwise.
 func isSpaceOrLetter(r rune) bool {
 	return (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || r == ' '
 }
 
-func IsValidURL(link string) bool {
+// ParseURL parses the given link and checks if it has a valid scheme and host.
+// It returns an error if the link is invalid.
+func ParseURL(link string) error {
 	u, err := url.Parse(link)
 
 	if err != nil || u.Scheme == "" || u.Host == "" {
-		return false
+		return err
 	}
 
-	return true
+	return nil
 
 }
