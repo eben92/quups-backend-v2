@@ -1,10 +1,10 @@
 package userservice
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log"
+	"log/slog"
 	"slices"
 	"strings"
 
@@ -14,46 +14,49 @@ import (
 	local_jwt "quups-backend/internal/utils/jwt"
 )
 
-func createCompanyParams(
-	ctx context.Context,
-	repo *model.Queries,
-	body *userdto.CreateCompanyParams,
-) (*model.CreateCompanyParams, error) {
-	auth_user := local_jwt.GetAuthContext(ctx)
-
+func ValidateCreateCompanyQParams(body userdto.CreateCompanyParams) error {
 	if body.Email == "" || body.Msisdn == "" || body.Name == "" {
-		return nil, errors.New("company email, name & phone number is required")
+		return errors.New("company email, name & phone number is required")
 	}
 
 	if !utils.IsVaildEmail(body.Email) {
-		return nil, invalidEmailErr
+		return invalidEmailErr
 	}
 
-	cname, isvalid := utils.IsValidCompanyName(body.Name)
+	_, isvalid := utils.IsValidCompanyName(body.Name)
 
 	if !isvalid {
-		return nil, invalidNameErr
+		return invalidNameErr
 	}
 
-	msisdn, validmsisdn := utils.IsValidMsisdn(body.Msisdn)
+	_, validmsisdn := utils.IsValidMsisdn(body.Msisdn)
 	if !validmsisdn {
-		return nil, invalidMsisdnErr
+		return invalidMsisdnErr
 	}
 
-	log.Printf(
-		"setting up params to create a new company with name: [%s], email: [%s], msisdn: [%s], by: [%s]",
+	return nil
+}
+
+func (s *service) createCompanyParams(body userdto.CreateCompanyParams) (model.CreateCompanyParams, error) {
+	auth_user := local_jwt.GetAuthContext(s.ctx)
+
+	cname, _ := utils.IsValidCompanyName(body.Name)
+	msisdn, _ := utils.IsValidMsisdn(body.Msisdn)
+
+	slog.Info(
+		"setting up params to create a new company with name, email, msisdn, by",
 		body.Name,
 		body.Email,
 		body.Msisdn,
 		auth_user.Sub,
 	)
 
-	p := &model.CreateCompanyParams{
+	p := model.CreateCompanyParams{
 		ID:           utils.GenerateIntID(6),
 		Email:        body.Email,
-		Name:         *cname,
+		Name:         cname,
 		Msisdn:       msisdn,
-		Slug:         strings.ToLower(strings.ReplaceAll(*cname, " ", "-")),
+		Slug:         strings.ToLower(strings.ReplaceAll(cname, " ", "-")),
 		CurrencyCode: "GHS",
 		IsActive:     false,
 		OwnerID:      auth_user.Sub,
@@ -62,33 +65,33 @@ func createCompanyParams(
 	if body.BrandType != "" && slices.Contains(BRAND_TYPES, body.BrandType) {
 		p.BrandType = body.BrandType
 	} else {
-		return nil, invalidBrandTypeErr
+		return p, invalidBrandTypeErr
 	}
 
 	// TODO: check invitationCode
 
-	if c, _ := repo.GetCompanyByID(ctx, p.ID); c.ID != "" {
-		log.Printf("company id already exist. used by [%s] - [%s]", c.Name, c.ID)
-		log.Println("generating new company id")
+	if c, _ := s.GetCompanyByID(p.ID); c.ID != "" {
+		slog.Warn("company id already exist. used by", c.Name)
+		slog.Info("generating new company id")
 
 		p.ID = utils.GenerateIntID(6)
 
-		log.Printf("new company id generated [%s]", p.ID)
+		slog.Info("new company id generated", p.ID)
 	}
 
-	if c, _ := repo.GetCompanyByName(ctx, body.Name); c.ID != "" {
-		log.Printf("user name already exist  [%s]", body.Name)
+	if c, _ := s.GetCompanyByName(body.Name); c.ID != "" {
+		slog.Warn("company name already exist  [%s]", body.Name)
 
-		return nil, errors.New("username already in use. Please choose another one")
+		return p, errors.New("company already in use. Please choose another one")
 	}
 
-	if body.BannerUrl != "" && utils.IsVaildEmail(body.BannerUrl) {
+	if utils.ParseURL(body.BannerUrl) == nil {
 		// check if the string is a url
 		p.BannerUrl.String = body.BannerUrl
 		p.BannerUrl.Valid = true
 	}
 
-	if body.ImageUrl != "" && utils.IsVaildEmail(body.ImageUrl) {
+	if utils.ParseURL(body.ImageUrl) == nil {
 		// check if the string is a url
 		p.ImageUrl.String = body.ImageUrl
 		p.ImageUrl.Valid = true
@@ -102,40 +105,41 @@ func createCompanyParams(
 	return p, nil
 }
 
-func (s *service) CreateCompany(
-	body *userdto.CreateCompanyParams,
-) (*userdto.CompanyInternalDTO, error) {
+func (s *service) CreateCompany(body userdto.CreateCompanyParams) (userdto.CompanyInternalDTO, error) {
 	repo := s.db.NewRepository()
+	result := userdto.CompanyInternalDTO{}
 
-	params, err := createCompanyParams(s.ctx, repo, body)
+	params, err := s.createCompanyParams(body)
 	if err != nil {
 		log.Printf("failed to create company error: [%s]", err.Error())
 
-		return nil, err
+		return result, err
 	}
 
 	tx, err := s.db.NewRawDB().Begin()
+
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	defer tx.Rollback()
 
 	qtx := repo.WithTx(tx)
 
-	nc, err := qtx.CreateCompany(s.ctx, *params)
-	if err != nil {
-		log.Printf("error creating company. [%s]", err.Error())
+	nc, err := qtx.CreateCompany(s.ctx, params)
 
-		return nil, errors.New("an error occured while creating company. please try again")
+	if err != nil {
+		slog.Error("error creating company.", "Error", err)
+
+		return result, errors.New("an error occured while creating company. please try again")
 	}
 
-	userId := local_jwt.GetAuthContext(s.ctx).Sub
+	// userId := local_jwt.GetAuthContext(s.ctx).Sub
 
-	_, err = s.CreateUserTeam(userId, nc.ID, qtx)
+	// _, err = s.CreateUserTeam(userId, nc.ID, qtx)
 
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	c := mapToCompanyInternalDTO(nc)
@@ -171,53 +175,59 @@ func (s *service) createPaymentAccountDetails(qtx *model.Queries) {
 
 }
 
-func (s *service) GetAllCompanies() ([]*userdto.CompanyInternalDTO, error) {
+func (s *service) GetAllCompanies() ([]userdto.CompanyInternalDTO, error) {
 	repo := s.db.NewRepository()
 	c, err := repo.GetAllCompanies(s.ctx)
+
+	results := []userdto.CompanyInternalDTO{}
+
 	if err != nil {
 		log.Printf("error fetching all companies  [%s]", err.Error())
 		return nil, err
 	}
 
-	comp := []*userdto.CompanyInternalDTO{}
-
 	for _, cu := range c {
 		c := mapToCompanyInternalDTO(cu)
 
-		comp = append(comp, c)
+		results = append(results, c)
 	}
 
-	return comp, nil
+	return results, nil
 }
 
-func (s *service) GetCompanyByName(name string) (*userdto.CompanyInternalDTO, error) {
+func (s *service) GetCompanyByName(name string) (userdto.CompanyInternalDTO, error) {
+	result := userdto.CompanyInternalDTO{}
 	repo := s.db.NewRepository()
 	res, err := repo.GetCompanyByName(s.ctx, name)
+
 	if err != nil {
-		log.Printf("error fetching company with name: [%s]", err.Error())
-		return nil, fmt.Errorf("company with name: [%s] not found", name)
+		slog.Error("fetching company with name", "Error", err)
+		return result, fmt.Errorf("company with name: [%s] not found", name)
 	}
 
-	c := mapToCompanyInternalDTO(res)
+	result = mapToCompanyInternalDTO(res)
 
-	return c, nil
+	return result, nil
 }
 
-func (s *service) GetCompanyByID(id string) (*userdto.CompanyInternalDTO, error) {
+func (s *service) GetCompanyByID(id string) (userdto.CompanyInternalDTO, error) {
 	repo := s.db.NewRepository()
-	res, err := repo.GetCompanyByID(s.ctx, id)
+	data, err := repo.GetCompanyByID(s.ctx, id)
+
+	result := userdto.CompanyInternalDTO{}
+
 	if err != nil {
-		log.Printf("error fetching company with id [%s]", err.Error())
-		return nil, fmt.Errorf("company with id [%s] not found", id)
+		slog.Error("error fetching company with id:", "Error", err)
+		return result, fmt.Errorf("company with id [%s] not found", id)
 	}
 
-	c := mapToCompanyInternalDTO(res)
+	result = mapToCompanyInternalDTO(data)
 
-	return c, nil
+	return result, nil
 }
 
-func mapToCompanyInternalDTO(c model.Company) *userdto.CompanyInternalDTO {
-	dto := &userdto.CompanyInternalDTO{
+func mapToCompanyInternalDTO(c model.Company) userdto.CompanyInternalDTO {
+	dto := userdto.CompanyInternalDTO{
 		ID:     c.ID,
 		Name:   c.Name,
 		Email:  c.Email,

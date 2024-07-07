@@ -16,7 +16,7 @@ var (
 type apiResponse struct {
 	Status  bool
 	Message string
-	Data    *[]Bank
+	Data    []Bank
 }
 
 type Bank struct {
@@ -37,7 +37,7 @@ type Bank struct {
 	UpdatedAt        time.Time   `json:"updatedAt"`
 }
 
-func (s *service) GetBankList() (*[]Bank, error) {
+func (s *service) GetBankList() ([]Bank, error) {
 
 	url := fmt.Sprintf("%s/bank?country=ghana&type=mobile_money", PAYSTACK_URL)
 	bearer := fmt.Sprintf("Bearer %s", ACC_TOKEN)
