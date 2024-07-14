@@ -45,7 +45,8 @@ type UserService interface {
 	// FindByEmail retrieves a user by their email address.
 	FindByEmail(email string) (userdto.UserInternalDTO, error)
 
-	// FindByID retrieves a user by their ID.
+	// FindByID retrieves a user by their ID. It uses the user's ID from the JWT token.
+	// It returns the user's internal DTO (Data Transfer Object) and an error, if any.
 	FindByID() (userdto.UserInternalDTO, error)
 
 	// FindByMsisdn retrieves a user by their MSISDN (mobile number).

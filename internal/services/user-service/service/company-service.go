@@ -1,6 +1,7 @@
 package userservice
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"log"
@@ -10,6 +11,7 @@ import (
 
 	model "quups-backend/internal/database/repository"
 	userdto "quups-backend/internal/services/user-service/dto"
+	"quups-backend/internal/services/user-service/models"
 	"quups-backend/internal/utils"
 	local_jwt "quups-backend/internal/utils/jwt"
 )
@@ -111,6 +113,7 @@ func (s *service) createCompanyParams(body userdto.CreateCompanyParams) (model.C
 
 func (s *service) CreateCompany(body userdto.CreateCompanyParams) (userdto.CompanyInternalDTO, error) {
 	slog.Info("about to create new company")
+
 	repo := s.db.NewRepository()
 	result := userdto.CompanyInternalDTO{}
 
@@ -121,13 +124,22 @@ func (s *service) CreateCompany(body userdto.CreateCompanyParams) (userdto.Compa
 		return result, err
 	}
 
+	user, err := s.FindByID()
+
+	if err != nil {
+		slog.Error("error fetching user by id [%s]", "Error", err.Error())
+		return result, err
+	}
+
 	tx, err := s.db.NewRawDB().Begin()
 
 	if err != nil {
 		return result, err
 	}
 
-	defer tx.Rollback()
+	defer func() {
+		_ = tx.Rollback()
+	}()
 
 	qtx := repo.WithTx(tx)
 
@@ -137,18 +149,36 @@ func (s *service) CreateCompany(body userdto.CreateCompanyParams) (userdto.Compa
 		slog.Error("error creating company.", "Error", err)
 
 		return result, errors.New("an error occured while creating company. please try again")
+
 	}
 
-	// userId := local_jwt.GetAuthContext(s.ctx).Sub
+	_, err = qtx.AddMember(s.ctx, model.AddMemberParams{
+		CompanyID: nc.ID,
+		Name:      user.Name,
+		Msisdn:    user.Msisdn,
+		Role:      string(models.ADMIN_ROLE),
+		Status:    string(models.ACTIVE_STATUS),
+		UserID: sql.NullString{
+			String: user.ID,
+			Valid:  true,
+		},
+		Email: sql.NullString{
+			String: user.Email,
+			Valid:  true,
+		},
+	})
 
-	// _, err = s.CreateUserTeam(userId, nc.ID, qtx)
+	if err != nil {
+		slog.Error("error creating company.", "Error", err)
+
+		return result, errors.New("an error occured while creating company. please try again")
+	}
 
 	c := mapToCompanyInternalDTO(nc)
-	_ = tx.Commit()
 
 	slog.Info("company created successully")
 
-	return c, nil
+	return c, tx.Commit()
 }
 
 func (s *service) CreatePaymentAccount() {

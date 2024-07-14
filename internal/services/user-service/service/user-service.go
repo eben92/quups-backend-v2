@@ -192,7 +192,7 @@ func (s *service) FindByEmail(email string) (userdto.UserInternalDTO, error) {
 	return result, nil
 }
 
-// FindByID retrieves a user by their ID.
+// FindByID retrieves a user by their ID. It uses the user's ID from the JWT token.
 // It returns the user's internal DTO (Data Transfer Object) and an error, if any.
 func (s *service) FindByID() (userdto.UserInternalDTO, error) {
 
