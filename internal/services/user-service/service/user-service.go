@@ -375,6 +375,7 @@ func mapToUserTeamInternalDTO(t model.GetUserTeamsRow) userdto.UserTeamDTO {
 		CompanyID: t.CompanyID,
 		Msisdn:    t.Msisdn,
 		Status:    t.Status,
+		Role:      t.Role,
 		Company: userdto.TeamCompanyDTO{
 			ID:    t.CompanyID,
 			Name:  t.CompanyName,
