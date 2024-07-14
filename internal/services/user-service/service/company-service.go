@@ -127,7 +127,7 @@ func (s *service) CreateCompany(body userdto.CreateCompanyParams) (userdto.Compa
 	user, err := s.FindByID()
 
 	if err != nil {
-		slog.Error("error fetching user by id [%s]", "Error", err.Error())
+		slog.Error("error fetching user by id", "Error", err.Error())
 		return result, err
 	}
 
@@ -174,11 +174,18 @@ func (s *service) CreateCompany(body userdto.CreateCompanyParams) (userdto.Compa
 		return result, errors.New("an error occured while creating company. please try again")
 	}
 
+	err = tx.Commit()
+
+	if err != nil {
+		slog.Error("error creating company.", "Error", err)
+		return result, errors.New("an error occured while creating company. please try again")
+	}
+
 	c := mapToCompanyInternalDTO(nc)
 
 	slog.Info("company created successully")
 
-	return c, tx.Commit()
+	return c, nil
 }
 
 func (s *service) CreatePaymentAccount() {

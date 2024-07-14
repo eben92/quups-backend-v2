@@ -204,7 +204,7 @@ func (s *service) FindByID() (userdto.UserInternalDTO, error) {
 	repo := s.db.NewRepository()
 	u, err := repo.GetUserByID(s.ctx, userId)
 	if err != nil {
-		slog.Error("error fetching user with ID:  error: ", "Error", err)
+		slog.Error("FindUserByID", "Error", err)
 
 		return user, fmt.Errorf("no user found")
 	}
