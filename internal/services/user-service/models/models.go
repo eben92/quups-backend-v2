@@ -3,7 +3,7 @@ package models
 type Role string
 
 const (
-	ADMIN_ROLE      Role = "ADMIN"
+	OWNER_ROLE      Role = "OWNER"
 	DISPATCHER_ROLE Role = "DISPATCHER"
 	WAITER_ROLE     Role = "WAITER"
 	AGENT_ROLE      Role = "AGENT"

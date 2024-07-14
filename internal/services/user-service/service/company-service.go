@@ -156,7 +156,7 @@ func (s *service) CreateCompany(body userdto.CreateCompanyParams) (userdto.Compa
 		CompanyID: nc.ID,
 		Name:      user.Name,
 		Msisdn:    user.Msisdn,
-		Role:      string(models.ADMIN_ROLE),
+		Role:      string(models.OWNER_ROLE),
 		Status:    string(models.ACTIVE_STATUS),
 		UserID: sql.NullString{
 			String: user.ID,
