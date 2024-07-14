@@ -18,10 +18,11 @@ INSERT INTO members (
         email,
         msisdn,
         role,
-        user_id
+        user_id,
+        status
     )
 VALUES (
-    $1, $2, $3, $4, $5, $6
+    $1, $2, $3, $4, $5, $6, $7
     )
 RETURNING id, name, msisdn, email, role, status, company_id, user_id, created_at, updated_at
 `
@@ -33,6 +34,7 @@ type AddMemberParams struct {
 	Msisdn    string         `json:"msisdn"`
 	Role      string         `json:"role"`
 	UserID    sql.NullString `json:"user_id"`
+	Status    string         `json:"status"`
 }
 
 func (q *Queries) AddMember(ctx context.Context, arg AddMemberParams) (Member, error) {
@@ -43,6 +45,7 @@ func (q *Queries) AddMember(ctx context.Context, arg AddMemberParams) (Member, e
 		arg.Msisdn,
 		arg.Role,
 		arg.UserID,
+		arg.Status,
 	)
 	var i Member
 	err := row.Scan(
@@ -105,6 +108,70 @@ func (q *Queries) GetMembersByCompanyID(ctx context.Context, arg GetMembersByCom
 		return nil, err
 	}
 	return items, nil
+}
+
+const getUserTeam = `-- name: GetUserTeam :one
+SELECT members.id, members.name, members.msisdn, members.email, members.role, members.status, members.company_id, members.user_id, members.created_at, members.updated_at,  
+    companies.email as company_email,
+    companies.name as company_name,
+    companies.slug as company_slug,
+    companies.banner_url as company_banner_url,
+    companies.image_url as company_image_url,
+    companies.about as company_about,
+    companies.is_active as company_is_active
+FROM members
+JOIN companies ON members.company_id = companies.id
+WHERE members.company_id = $1 AND members.user_id = $2
+`
+
+type GetUserTeamParams struct {
+	CompanyID string         `json:"company_id"`
+	UserID    sql.NullString `json:"user_id"`
+}
+
+type GetUserTeamRow struct {
+	ID               string         `json:"id"`
+	Name             string         `json:"name"`
+	Msisdn           string         `json:"msisdn"`
+	Email            sql.NullString `json:"email"`
+	Role             string         `json:"role"`
+	Status           string         `json:"status"`
+	CompanyID        string         `json:"company_id"`
+	UserID           sql.NullString `json:"user_id"`
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        time.Time      `json:"updated_at"`
+	CompanyEmail     string         `json:"company_email"`
+	CompanyName      string         `json:"company_name"`
+	CompanySlug      string         `json:"company_slug"`
+	CompanyBannerUrl sql.NullString `json:"company_banner_url"`
+	CompanyImageUrl  sql.NullString `json:"company_image_url"`
+	CompanyAbout     sql.NullString `json:"company_about"`
+	CompanyIsActive  bool           `json:"company_is_active"`
+}
+
+func (q *Queries) GetUserTeam(ctx context.Context, arg GetUserTeamParams) (GetUserTeamRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserTeam, arg.CompanyID, arg.UserID)
+	var i GetUserTeamRow
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Msisdn,
+		&i.Email,
+		&i.Role,
+		&i.Status,
+		&i.CompanyID,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.CompanyEmail,
+		&i.CompanyName,
+		&i.CompanySlug,
+		&i.CompanyBannerUrl,
+		&i.CompanyImageUrl,
+		&i.CompanyAbout,
+		&i.CompanyIsActive,
+	)
+	return i, err
 }
 
 const getUserTeams = `-- name: GetUserTeams :many

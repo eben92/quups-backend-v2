@@ -34,6 +34,7 @@ type Querier interface {
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id string) (User, error)
 	GetUserByMsisdn(ctx context.Context, msisdn sql.NullString) (User, error)
+	GetUserTeam(ctx context.Context, arg GetUserTeamParams) (GetUserTeamRow, error)
 	GetUserTeams(ctx context.Context, userID sql.NullString) ([]GetUserTeamsRow, error)
 	GetUsers(ctx context.Context) ([]User, error)
 	GetWorkingHoursByCompanyID(ctx context.Context, companyID string) ([]WorkingHour, error)

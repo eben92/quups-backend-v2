@@ -34,7 +34,7 @@ func ReplacePrefix(s, prefix, with string) string {
 
 // eg. 0550404071 will be converted to 233550404071 in (bytes)
 //
-//	If msisdn doesn't start with prefix, msisdn is returned unchanged.
+//	If msisdn doesnt start with prefix, msisdn is returned unchanged.
 func ConvertToLocalMsisdn(msisdn string) ([]byte, error) {
 
 	if len(msisdn) < 9 || len(msisdn) > 13 {
@@ -51,19 +51,21 @@ func ConvertToLocalMsisdn(msisdn string) ([]byte, error) {
 	return []byte(msisdn), nil
 }
 
-// IsValidMsisdn removes any local prefix in msisdn(+233 or 0), returns
+type Msisdn string
+
+// ParseMsisdn removes any local prefix in msisdn(+233 or 0), returns
 // the updated msisdn(233xxxx...) and a boolean value
 //   - true (if msisdn is not an empty string) otherwise false.
 //     If msisdn doesn't start with prefix, msisdn is returned unchanged.
-func IsValidMsisdn(msisdn string) (string, bool) {
+func ParseMsisdn(msisdn string) (Msisdn, bool) {
 
 	m, err := ConvertToLocalMsisdn(msisdn)
 
 	if err != nil {
-		return string(m), false
+		return Msisdn(m), false
 	}
 
-	return string(m), true
+	return Msisdn(m), true
 }
 
 func IsVaildEmail(e string) bool {
@@ -88,18 +90,18 @@ func GenerateIntID(size int) string {
 
 // IsValidCompanyName returns a slice of the string s and a bool,
 // with all leading and trailing white space removed, as defined by Unicode.
-func IsValidCompanyName(s string) (*string, bool) {
+func IsValidCompanyName(s string) (string, bool) {
 	s = strings.TrimSpace(s)
 
 	if len(s) < 3 {
-		return nil, false
+		return s, false
 	}
 
 	if includeSpecialChar(s) {
-		return nil, false
+		return s, false
 	}
 
-	return &s, true
+	return s, true
 }
 
 // func includeSpecialChar(s string) bool {
@@ -121,17 +123,21 @@ func includeSpecialChar(s string) bool {
 	return false
 }
 
+// isSpaceOrLetter checks if the given rune is a space or a letter.
+// It returns true if the rune is a space or a letter (uppercase or lowercase), and false otherwise.
 func isSpaceOrLetter(r rune) bool {
 	return (r >= 'A' && r <= 'Z') || (r >= 'a' && r <= 'z') || r == ' '
 }
 
-func IsValidURL(link string) bool {
+// ParseURL parses the given link and checks if it has a valid scheme and host.
+// It returns an error if the link is invalid.
+func ParseURL(link string) error {
 	u, err := url.Parse(link)
 
 	if err != nil || u.Scheme == "" || u.Host == "" {
-		return false
+		return err
 	}
 
-	return true
+	return nil
 
 }

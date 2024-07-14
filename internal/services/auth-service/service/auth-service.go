@@ -1,91 +1,168 @@
 package authservice
 
 import (
-	"context"
 	"fmt"
-	"log"
+	"log/slog"
 
-	"quups-backend/internal/database/repository"
+	"golang.org/x/crypto/bcrypt"
+
 	authdto "quups-backend/internal/services/auth-service/dto"
 	userdto "quups-backend/internal/services/user-service/dto"
 	userservice "quups-backend/internal/services/user-service/service"
+	"quups-backend/internal/utils"
 	local_jwt "quups-backend/internal/utils/jwt"
-
-	"golang.org/x/crypto/bcrypt"
 )
 
-const (
-	incorrectpass = "incorrect phone number or password"
-)
+func (s *service) Signin(body authdto.SignInRequestDTO) (authdto.ResponseUserDTO, error) {
+	result := authdto.ResponseUserDTO{}
+	uservice := userservice.NewUserService(s.ctx, s.db)
 
-type Service struct {
-	repo *repository.Queries
-	ctx  context.Context
-}
+	msisdn, _ := utils.ParseMsisdn(body.Msisdn)
 
-func New(ctx context.Context, r *repository.Queries) *Service {
-	return &Service{
-		repo: r,
-		ctx:  ctx,
-	}
-}
-
-func (s *Service) SigninHandler(body *authdto.SignInRequestDTO) (*authdto.ResponseUserDTO, error) {
-
-	uService := userservice.New(s.ctx, s.repo)
-
-	u, err := uService.FindByMsisdn(body.Msisdn)
+	u, err := uservice.FindByMsisdn(msisdn)
 
 	if err != nil {
-		return nil, fmt.Errorf(incorrectpass)
+		return result, fmt.Errorf(incorrectpass)
 	}
 
-	if !isPasswordMatch(body.Password, *u.Password) {
-		log.Printf("incorrect password for [%s]", body.Msisdn)
-		return nil, fmt.Errorf(incorrectpass)
+	if !isPasswordMatch(body.Password, u.Password) {
+		slog.Error("incorrect password for ", "Errors", body.Msisdn)
+		return result, fmt.Errorf(incorrectpass)
 	}
 
-	user, _ := mapToUserDTO(u)
+	result = mapToUserDTO(u)
 
-	return user, nil
+	tstring, err := generateAccessToken(local_jwt.AuthContext{
+		Sub:  result.ID,
+		Name: result.Name,
+	})
+
+	if err != nil {
+		return result, fmt.Errorf("error signing in. Please try again")
+	}
+
+	result.AccessToken = tstring
+
+	return result, nil
 }
 
-func (s *Service) SignupHandler(body *userdto.CreateUserParams) (*authdto.ResponseUserDTO, error) {
-	uService := userservice.New(s.ctx, s.repo)
+// AccountSignin handles the user account sign-in process and returns the response user DTO and an error, if any.
+func (s *service) AccountSignin(body authdto.AccountSigninDTO) (userdto.UserTeamDTO, error) {
 
-	//create user and generate jwt signed token
-	u, err := uService.Create(body)
+	authuser, err := local_jwt.GetAuthContext(s.ctx)
 
+	if err != nil {
+
+		return userdto.UserTeamDTO{}, fmt.Errorf("error getting account. Please try again")
+	}
+
+	uservice := userservice.NewUserService(s.ctx, s.db)
+	result, err := uservice.GetUserTeam(body.ID)
+
+	if err != nil {
+
+		return result, fmt.Errorf("error getting account. Please try again")
+	}
+
+	tstring, err := generateAccessToken(local_jwt.AuthContext{
+		Sub:       authuser.Sub,
+		Name:      authuser.Name,
+		CompanyID: result.CompanyID,
+	})
+
+	if err != nil {
+		return result, fmt.Errorf("error signing in. Please try again")
+	}
+
+	result.AccessToken = tstring
+
+	return result, nil
+}
+
+func (s *service) Signup(body userdto.CreateUserParams) (authdto.ResponseUserDTO, error) {
+	uservice := userservice.NewUserService(s.ctx, s.db)
+	result := authdto.ResponseUserDTO{}
+
+	// create user and generate jwt signed token
+	u, err := uservice.Create(body)
 	// send the signed token in both the request body and append it to the browser cookie
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
-	user, _ := mapToUserDTO(u)
+	result = mapToUserDTO(u)
 
-	return user, nil
+	tstring, err := generateAccessToken(local_jwt.AuthContext{
+		Sub:  result.ID,
+		Name: result.Name,
+	})
+
+	if err != nil {
+		slog.Error("error generating jwt", "Error", err)
+
+		return result, err
+	}
+
+	result.AccessToken = tstring
+
+	return result, nil
 }
 
-func mapToUserDTO(user *userdto.UserInternalDTO) (*authdto.ResponseUserDTO, error) {
+// SoftSignout handles the user sign-out process and returns a string and an error, if any.
+// It generates a new jwt token for the user.
+func (s *service) SoftSignout() (string, error) {
+	user, err := local_jwt.GetAuthContext(s.ctx)
 
-	t, err := local_jwt.GenereteJWT(user.ID, *user.Name)
 	if err != nil {
-		return nil, err
+
+		slog.Error("SoftSignout - error getting user from context", "Error", err)
+
+		return "", fmt.Errorf("error signing out. Please try again")
+	}
+
+	tstring, err := generateAccessToken(local_jwt.AuthContext{
+		Sub:  user.Sub,
+		Name: user.Name,
+	})
+
+	if err != nil {
+		return "", fmt.Errorf("error signing out. Please try again")
+	}
+
+	return tstring, nil
+}
+
+func mapToUserDTO(user userdto.UserInternalDTO) authdto.ResponseUserDTO {
+
+	dto := authdto.ResponseUserDTO{
+		ID:       user.ID,
+		Email:    user.Email,
+		Name:     user.Name,
+		Msisdn:   user.Msisdn,
+		ImageUrl: user.ImageUrl,
+		Gender:   user.Gender,
+	}
+
+	return dto
+}
+
+func generateAccessToken(data local_jwt.AuthContext) (string, error) {
+
+	t, err := local_jwt.GenereteJWT(local_jwt.AuthContext{
+		Sub:       data.Sub,
+		Name:      data.Name,
+		CompanyID: data.CompanyID,
+	})
+
+	if err != nil {
+		slog.Error("error generating jwt", "Error", err)
+
+		return "", err
 	}
 
 	tstring := string(t)
 
-	dto := &authdto.ResponseUserDTO{
-		ID:          user.ID,
-		Email:       user.Email,
-		Name:        user.Name,
-		Msisdn:      user.Msisdn,
-		ImageUrl:    user.ImageUrl,
-		Gender:      user.Gender,
-		AccessToken: &tstring,
-	}
-
-	return dto, nil
+	return tstring, nil
 
 }
 
@@ -93,32 +170,4 @@ func isPasswordMatch(rawpass, hashpass string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(hashpass), []byte(rawpass))
 
 	return err == nil
-
 }
-
-/*
-Generetes a signed token and return as byte or nil.
-Convert to string before sending to client
-*/
-// func genereteJWT(ID, name string) ([]byte, error) {
-
-// 	// Create a new token object, specifying signing method and the claims
-// 	// you would like it to contain.
-// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-// 		"sub":    ID,
-// 		"issuer": "WEB",
-// 		"name":   name,
-// 		"exp":    time.Now().Add(time.Hour * 24 * 30).Unix(),
-// 	})
-
-// 	// Sign and get the complete encoded token as a string using the secret
-// 	tokenString, err := token.SignedString([]byte(JWT_SECRET))
-
-// 	if err != nil {
-// 		log.Printf("Error signing jwt [%s]", err.Error())
-
-// 		return nil, fmt.Errorf("Something went wrong. Please try again. #2")
-// 	}
-
-// 	return []byte(tokenString), nil
-// }

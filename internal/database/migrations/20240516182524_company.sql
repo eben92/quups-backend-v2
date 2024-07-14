@@ -48,13 +48,16 @@ CREATE UNIQUE INDEX ON "members" ("msisdn", "company_id");
 -- TODO: write test for this;
 -- CREATE UNIQUE INDEX ON "members" ("user_id", "company_id");
 
-ALTER TABLE "members"
-    ADD FOREIGN KEY ("company_id")
-    REFERENCES "companies" ("id");
+
 
 ALTER TABLE "members"
     ADD FOREIGN KEY ("user_id")
     REFERENCES "users" ("id");
+
+ALTER TABLE "members"
+    ADD FOREIGN KEY ("company_id")
+    REFERENCES "companies" ("id");
+
 
 CREATE TABLE IF NOT EXISTS configurations (
     id  VARCHAR(150) PRIMARY KEY DEFAULT gen_random_uuid(),
