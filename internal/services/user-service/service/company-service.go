@@ -88,7 +88,7 @@ func (s *service) createCompanyParams(body userdto.CreateCompanyParams) (model.C
 	if c, _ := s.GetCompanyByName(body.Name); c.ID != "" {
 		slog.Warn("company name already exist ", "Warn", body.Name)
 
-		return p, errors.New("company already in use. Please choose another one")
+		return p, errors.New("company name is not available. Please choose another one")
 	}
 
 	if utils.ParseURL(body.BannerUrl) == nil {
