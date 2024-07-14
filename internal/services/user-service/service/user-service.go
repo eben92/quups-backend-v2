@@ -148,7 +148,7 @@ func (s *service) Create(body userdto.CreateUserParams) (userdto.UserInternalDTO
 	if err != nil {
 		slog.Error("error creating user", "Error", err)
 
-		return result, err
+		return result, fmt.Errorf("failed to create user. Please try again later")
 	}
 
 	if u.ID == "" {
@@ -196,30 +196,37 @@ func (s *service) FindByEmail(email string) (userdto.UserInternalDTO, error) {
 // It returns the user's internal DTO (Data Transfer Object) and an error, if any.
 func (s *service) FindByID() (userdto.UserInternalDTO, error) {
 
-	userId := local_jwt.GetAuthContext(s.ctx).Sub
+	result := userdto.UserInternalDTO{}
+	authuser, err := local_jwt.GetAuthContext(s.ctx)
 
-	slog.Info("fetching user with", " ID: ", userId)
-	user := userdto.UserInternalDTO{}
+	if err != nil {
+		slog.Error("FindByID", "Error", err)
+
+		return result, fmt.Errorf("no user found")
+
+	}
+
+	slog.Info("fetching user with", " ID: ", authuser.Sub)
 
 	repo := s.db.NewRepository()
-	u, err := repo.GetUserByID(s.ctx, userId)
+	u, err := repo.GetUserByID(s.ctx, authuser.Sub)
 	if err != nil {
 		slog.Error("FindUserByID", "Error", err)
 
-		return user, fmt.Errorf("no user found")
+		return result, fmt.Errorf("no user found")
 	}
 
 	if u.ID == "" {
-		slog.Warn("user with id: does not exist", " ID: ", userId)
+		slog.Warn("user with id: does not exist", " ID: ", authuser.Sub)
 
-		return user, fmt.Errorf("no user found")
+		return result, fmt.Errorf("no user found")
 	}
 
-	user = mapToUserInternalDTO(u)
+	result = mapToUserInternalDTO(u)
 
 	slog.Info("user retrieved successfully")
 
-	return user, nil
+	return result, nil
 }
 
 // FindByMsisdn fetches a user by their MSISDN (Mobile Station International Subscriber Directory Number).
@@ -260,14 +267,21 @@ func (s *service) FindByMsisdn(msisdn utils.Msisdn) (userdto.UserInternalDTO, er
 // It returns a slice of userdto.UserTeamDTO and an error if any.
 func (s *service) GetUserTeams() ([]userdto.UserTeamDTO, error) {
 
-	userId := local_jwt.GetAuthContext(s.ctx).Sub
+	authuser, err := local_jwt.GetAuthContext(s.ctx)
+	slog.Info("getting user teams", "user:", authuser.Sub)
 
-	slog.Info("getting user teams", "user:", userId)
+	if err != nil {
+		slog.Error("GetUserTeams", "Error", err)
+
+		return nil, errors.New("no data found")
+
+	}
+
 	repo := s.db.NewRepository()
-	results := []userdto.UserTeamDTO{}
 
+	results := []userdto.UserTeamDTO{}
 	t, err := repo.GetUserTeams(s.ctx, sql.NullString{
-		String: userId,
+		String: authuser.Sub,
 		Valid:  true,
 	})
 

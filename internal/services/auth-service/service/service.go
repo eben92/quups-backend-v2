@@ -18,6 +18,9 @@ type AuthService interface {
 
 	// Signup handles the user sign-up process and returns the response user DTO and an error, if any.
 	Signup(body userdto.CreateUserParams) (authdto.ResponseUserDTO, error)
+
+	// SoftSignout removes companyid from the user's token
+	SoftSignout() (string, error)
 }
 
 type service struct {

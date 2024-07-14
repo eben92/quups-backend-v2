@@ -40,7 +40,12 @@ func ValidateCreateCompanyQParams(body userdto.CreateCompanyParams) error {
 }
 
 func (s *service) createCompanyParams(body userdto.CreateCompanyParams) (model.CreateCompanyParams, error) {
-	auth_user := local_jwt.GetAuthContext(s.ctx)
+	auth_user, err := local_jwt.GetAuthContext(s.ctx)
+
+	if err != nil {
+		slog.Error("error fetching user", "Error", err)
+		return model.CreateCompanyParams{}, err
+	}
 
 	cname, _ := utils.IsValidCompanyName(body.Name)
 	msisdn, _ := utils.ParseMsisdn(body.Msisdn)
