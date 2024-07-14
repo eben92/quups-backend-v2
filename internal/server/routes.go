@@ -10,6 +10,7 @@ import (
 	"github.com/go-chi/cors"
 
 	authcontroller "quups-backend/internal/services/auth-service/controller"
+	paymentcontroller "quups-backend/internal/services/payment-service/controller"
 	usercontroller "quups-backend/internal/services/user-service/controller"
 	local_jwt "quups-backend/internal/utils/jwt"
 )
@@ -65,7 +66,7 @@ func (s *Server) companyController(r chi.Router) {
 
 // payment controller
 func (s *Server) paymentController(r chi.Router) {
-	handler := usercontroller.NewPaymentController(s.db)
+	handler := paymentcontroller.NewPaymentController(s.db)
 
 	r.Get("/supported-banks", handler.GetBankList)
 }

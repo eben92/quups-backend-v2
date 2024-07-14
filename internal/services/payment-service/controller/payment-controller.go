@@ -1,16 +1,16 @@
-package usercontroller
+package paymentcontroller
 
 import (
 	"log"
 	"net/http"
-	userservice "quups-backend/internal/services/user-service/service"
+	paymentservice "quups-backend/internal/services/payment-service/service"
 	apiutils "quups-backend/internal/utils/api"
 )
 
 func (c *controller) GetBankList(w http.ResponseWriter, r *http.Request) {
 
 	response := apiutils.New(w, r)
-	s := userservice.NewPaymentService(r.Context(), c.db)
+	s := paymentservice.NewPaymentService(r.Context(), c.db)
 
 	res, err := s.GetBankList()
 

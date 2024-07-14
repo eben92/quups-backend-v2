@@ -85,17 +85,3 @@ func NewCompanyService(c context.Context, db database.Service) CompanyService {
 		ctx: c,
 	}
 }
-
-// PaymentService provides methods for interacting with payment services.
-type PaymentService interface {
-	// GetBankList returns a list of supported banks.
-	GetBankList() ([]Bank, error)
-}
-
-// Payment service
-func NewPaymentService(c context.Context, db database.Service) PaymentService {
-	return &service{
-		db:  db,
-		ctx: c,
-	}
-}
