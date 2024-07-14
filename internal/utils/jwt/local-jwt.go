@@ -23,8 +23,22 @@ var (
 	AUTH_CTX_KEY = &contextKey{"authcontext"}
 )
 
-type authContext struct {
+type AuthContext struct {
+	// Sub is the subject of the token
+	// This is used to determine the user the token belongs to
 	Sub string
+
+	// Issuer is the issuer of the token
+	// This is used to determine the source of the token
+	Issuer string
+
+	// Name is the name of the user
+	Name string
+
+	// CompanyID is the company id the current user has logged in to
+	// This is used to determine the company the user is currently working with
+	// in JWT, this is the 'client_id'
+	CompanyID string
 }
 
 type contextKey struct {
@@ -140,14 +154,16 @@ func GetTokenFromCookie(r *http.Request) string {
 Generetes a signed token and return as byte or nil.
 Convert to string before sending to client
 */
-func GenereteJWT(ID, name string) ([]byte, error) {
+func GenereteJWT(data AuthContext) ([]byte, error) {
 	// Create a new token object, specifying signing method and the claims
 	// you would like it to contain.
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub":    ID,
-		"issuer": "WEB",
-		"name":   name,
-		"exp":    time.Now().Add(time.Hour * 24 * 30).Unix(),
+		"service_id": "quups-backend",
+		"sub":        data.Sub,
+		"client_id":  data.CompanyID,
+		"name":       data.Name,
+		"issuer":     "WEB",
+		"exp":        time.Now().Add(time.Hour * 24 * 30).Unix(),
 	})
 
 	// Sign and get the complete encoded token as a string using the secret
@@ -200,10 +216,19 @@ func newContext(ctx context.Context, claims jwt.MapClaims) (context.Context, err
 }
 
 // GetAuthContext returns decoded jwt data
-func GetAuthContext(ctx context.Context) *authContext {
-	claims, _ := ctx.Value(AUTH_CTX_KEY).(jwt.MapClaims)
+func GetAuthContext(ctx context.Context) (AuthContext, error) {
+	claims, ok := ctx.Value(AUTH_CTX_KEY).(jwt.MapClaims)
 
-	return &authContext{
-		Sub: claims["sub"].(string),
+	if !ok {
+		slog.Error("GetAuthContext - no claims found", "Error", ErrNoTokenFound)
+
+		return AuthContext{}, ErrNoTokenFound
 	}
+
+	return AuthContext{
+		Sub:       claims["sub"].(string),
+		Issuer:    claims["issuer"].(string),
+		Name:      claims["name"].(string),
+		CompanyID: claims["client_id"].(string),
+	}, nil
 }

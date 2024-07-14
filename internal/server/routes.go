@@ -50,6 +50,7 @@ func (s *Server) authController(r chi.Router) {
 
 	r.Post("/signin", handler.Signin)
 	r.Post("/signup", handler.Signup)
+	r.Post("/signout", handler.Signout)
 }
 
 func (s *Server) companyController(r chi.Router) {

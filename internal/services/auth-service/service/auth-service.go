@@ -55,18 +55,43 @@ func (s *service) Signup(body userdto.CreateUserParams) (authdto.ResponseUserDTO
 	return result, nil
 }
 
+// SoftSignout handles the user sign-out process and returns a string and an error, if any.
+// It generates a new jwt token for the user.
+func (s *service) SoftSignout() (string, error) {
+	user, err := local_jwt.GetAuthContext(s.ctx)
+
+	if err != nil {
+
+		slog.Error("SoftSignout - error getting user from context", "Error", err)
+
+		return "", fmt.Errorf("error signing out. Please try again")
+	}
+
+	tstring, err := generateAccessToken(local_jwt.AuthContext{
+		Sub:  user.Sub,
+		Name: user.Name,
+	})
+
+	if err != nil {
+		return "", fmt.Errorf("error signing out. Please try again")
+	}
+
+	return tstring, nil
+}
+
 func mapToUserDTO(user userdto.UserInternalDTO) (authdto.ResponseUserDTO, error) {
 	result := authdto.ResponseUserDTO{}
 
-	t, err := local_jwt.GenereteJWT(user.ID, user.Name)
+	tstring, err := generateAccessToken(local_jwt.AuthContext{
+		Sub:  user.ID,
+		Name: user.Name,
+	})
 
 	if err != nil {
 		slog.Error("error generating jwt", "Error", err)
 
 		return result, err
 	}
-
-	tstring := string(t)
 
 	dto := authdto.ResponseUserDTO{
 		ID:          user.ID,
@@ -79,6 +104,26 @@ func mapToUserDTO(user userdto.UserInternalDTO) (authdto.ResponseUserDTO, error)
 	}
 
 	return dto, nil
+}
+
+func generateAccessToken(data local_jwt.AuthContext) (string, error) {
+
+	t, err := local_jwt.GenereteJWT(local_jwt.AuthContext{
+		Sub:       data.Sub,
+		Name:      data.Name,
+		CompanyID: data.CompanyID,
+	})
+
+	if err != nil {
+		slog.Error("error generating jwt", "Error", err)
+
+		return "", err
+	}
+
+	tstring := string(t)
+
+	return tstring, nil
+
 }
 
 func isPasswordMatch(rawpass, hashpass string) bool {

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"quups-backend/internal/database"
@@ -125,6 +126,53 @@ func (s *Controller) Signup(w http.ResponseWriter, r *http.Request) {
 		Results:    user, // TODO: shoudld we take this out?
 		Message:    success,
 	})
+}
+
+func (s *Controller) Signout(w http.ResponseWriter, r *http.Request) {
+	querytype := r.URL.Query().Get("type")
+
+	if strings.ToLower(querytype) == "soft" {
+		aservice := authservice.NewAuthService(r.Context(), s.db)
+
+		tstring, err := aservice.SoftSignout()
+
+		if err != nil {
+			response := apiutils.New(w, r)
+			response.WrapInApiResponse(&apiutils.ApiResponseParams{
+				StatusCode: http.StatusForbidden,
+				Results:    nil,
+				Message:    "error signing out",
+			})
+
+			return
+		}
+
+		setCookie(w, tstring)
+		response := apiutils.New(w, r)
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
+			StatusCode: http.StatusOK,
+			Results:    nil,
+			Message:    success,
+		})
+
+		return
+	}
+
+	cookie := &http.Cookie{
+		Name:    local_jwt.COOKIE_NAME,
+		Value:   "",
+		Expires: time.Now().Add(-time.Hour),
+	}
+
+	http.SetCookie(w, cookie)
+
+	response := apiutils.New(w, r)
+	response.WrapInApiResponse(&apiutils.ApiResponseParams{
+		StatusCode: http.StatusOK,
+		Results:    nil,
+		Message:    success,
+	})
+
 }
 
 func setCookie(w http.ResponseWriter, t string) {
