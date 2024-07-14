@@ -16,6 +16,9 @@ type AuthService interface {
 	// Signin handles the user sign-in process and returns the response user DTO and an error, if any.
 	Signin(body authdto.SignInRequestDTO) (authdto.ResponseUserDTO, error)
 
+	// AccountSignin handles the user account sign-in process and returns the response user DTO and an error, if any.
+	AccountSignin(body authdto.AccountSigninDTO) (authdto.ResponseUserDTO, error)
+
 	// Signup handles the user sign-up process and returns the response user DTO and an error, if any.
 	Signup(body userdto.CreateUserParams) (authdto.ResponseUserDTO, error)
 

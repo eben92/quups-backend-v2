@@ -30,9 +30,47 @@ func (s *service) Signin(body authdto.SignInRequestDTO) (authdto.ResponseUserDTO
 		return result, fmt.Errorf(incorrectpass)
 	}
 
-	user, _ := mapToUserDTO(u)
+	result = mapToUserDTO(u)
 
-	return user, nil
+	tstring, err := generateAccessToken(local_jwt.AuthContext{
+		Sub:  result.ID,
+		Name: result.Name,
+	})
+
+	if err != nil {
+		return result, fmt.Errorf("error signing in. Please try again")
+	}
+
+	result.AccessToken = tstring
+
+	return result, nil
+}
+
+// AccountSignin handles the user account sign-in process and returns the response user DTO and an error, if any.
+func (s *service) AccountSignin(body authdto.AccountSigninDTO) (authdto.ResponseUserDTO, error) {
+	result := authdto.ResponseUserDTO{}
+	uservice := userservice.NewUserService(s.ctx, s.db)
+	u, err := uservice.FindByID()
+
+	if err != nil {
+		return result, fmt.Errorf("error getting account. Please try again")
+	}
+
+	result = mapToUserDTO(u)
+
+	tstring, err := generateAccessToken(local_jwt.AuthContext{
+		Sub:       result.ID,
+		Name:      result.Name,
+		CompanyID: body.ID,
+	})
+
+	if err != nil {
+		return result, fmt.Errorf("error signing in. Please try again")
+	}
+
+	result.AccessToken = tstring
+
+	return result, nil
 }
 
 func (s *service) Signup(body userdto.CreateUserParams) (authdto.ResponseUserDTO, error) {
@@ -46,11 +84,20 @@ func (s *service) Signup(body userdto.CreateUserParams) (authdto.ResponseUserDTO
 		return result, err
 	}
 
-	result, err = mapToUserDTO(u)
+	result = mapToUserDTO(u)
+
+	tstring, err := generateAccessToken(local_jwt.AuthContext{
+		Sub:  result.ID,
+		Name: result.Name,
+	})
 
 	if err != nil {
+		slog.Error("error generating jwt", "Error", err)
+
 		return result, err
 	}
+
+	result.AccessToken = tstring
 
 	return result, nil
 }
@@ -79,31 +126,18 @@ func (s *service) SoftSignout() (string, error) {
 	return tstring, nil
 }
 
-func mapToUserDTO(user userdto.UserInternalDTO) (authdto.ResponseUserDTO, error) {
-	result := authdto.ResponseUserDTO{}
-
-	tstring, err := generateAccessToken(local_jwt.AuthContext{
-		Sub:  user.ID,
-		Name: user.Name,
-	})
-
-	if err != nil {
-		slog.Error("error generating jwt", "Error", err)
-
-		return result, err
-	}
+func mapToUserDTO(user userdto.UserInternalDTO) authdto.ResponseUserDTO {
 
 	dto := authdto.ResponseUserDTO{
-		ID:          user.ID,
-		Email:       user.Email,
-		Name:        user.Name,
-		Msisdn:      user.Msisdn,
-		ImageUrl:    user.ImageUrl,
-		Gender:      user.Gender,
-		AccessToken: tstring,
+		ID:       user.ID,
+		Email:    user.Email,
+		Name:     user.Name,
+		Msisdn:   user.Msisdn,
+		ImageUrl: user.ImageUrl,
+		Gender:   user.Gender,
 	}
 
-	return dto, nil
+	return dto
 }
 
 func generateAccessToken(data local_jwt.AuthContext) (string, error) {

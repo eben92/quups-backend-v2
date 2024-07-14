@@ -16,6 +16,13 @@ import (
 	local_jwt "quups-backend/internal/utils/jwt"
 )
 
+type AuthController interface {
+	Signin(w http.ResponseWriter, r *http.Request)
+	AccountSignin(w http.ResponseWriter, r *http.Request)
+	Signup(w http.ResponseWriter, r *http.Request)
+	Signout(w http.ResponseWriter, r *http.Request)
+}
+
 type Controller struct {
 	db database.Service
 }
@@ -25,7 +32,7 @@ const (
 	success        = "success"
 )
 
-func New(db database.Service) *Controller {
+func New(db database.Service) AuthController {
 	return &Controller{
 		db: db,
 	}
@@ -69,6 +76,49 @@ func (s *Controller) Signin(w http.ResponseWriter, r *http.Request) {
 	response.WrapInApiResponse(&apiutils.ApiResponseParams{
 		StatusCode: http.StatusOK,
 		Results:    user,
+		Message:    success,
+	})
+}
+
+// POST: /auth/account
+func (s *Controller) AccountSignin(w http.ResponseWriter, r *http.Request) {
+	var body authdto.AccountSigninDTO
+	aservice := authservice.NewAuthService(r.Context(), s.db)
+	response := apiutils.New(w, r)
+
+	err := json.NewDecoder(r.Body).Decode(&body)
+	defer r.Body.Close()
+
+	if err != nil {
+		slog.Error("error decoding signin request body", "Error", err)
+
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
+			StatusCode: http.StatusBadRequest,
+			Results:    nil,
+			Message:    invalidRequest,
+		})
+
+		return
+	}
+
+	user, err := aservice.AccountSignin(body)
+
+	if err != nil {
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
+			StatusCode: http.StatusUnauthorized,
+			Results:    nil,
+			Message:    err.Error(),
+		})
+
+		return
+	}
+
+	access_token := user.AccessToken
+	setCookie(w, access_token)
+
+	response.WrapInApiResponse(&apiutils.ApiResponseParams{
+		StatusCode: http.StatusOK,
+		Results:    success,
 		Message:    success,
 	})
 }
@@ -128,6 +178,7 @@ func (s *Controller) Signup(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// POST: /auth/signout
 func (s *Controller) Signout(w http.ResponseWriter, r *http.Request) {
 	querytype := r.URL.Query().Get("type")
 

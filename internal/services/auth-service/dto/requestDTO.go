@@ -6,6 +6,10 @@ type SignInRequestDTO struct {
 	Password string
 }
 
+type AccountSigninDTO struct {
+	ID string
+}
+
 type SignUpRequestDTO struct {
 	Email    string
 	Name     string
