@@ -50,7 +50,6 @@ func (s *Server) authController(r chi.Router) {
 
 	r.Post("/signin", handler.Signin)
 	r.Post("/signup", handler.Signup)
-	r.Post("/account", handler.AccountSignin)
 	r.Post("/signout", handler.Signout)
 }
 
@@ -73,8 +72,10 @@ func (s *Server) paymentController(r chi.Router) {
 
 func (s *Server) userController(r chi.Router) {
 	handler := usercontroller.NewUserController(s.db)
+	authhandler := authcontroller.New(s.db)
 
 	r.Get("/teams", handler.GetUserTeams)
+	r.Post("/account", authhandler.AccountSignin)
 }
 
 func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {

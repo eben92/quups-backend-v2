@@ -80,7 +80,7 @@ func (s *Controller) Signin(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST: /auth/account
+// POST: /user/account
 func (s *Controller) AccountSignin(w http.ResponseWriter, r *http.Request) {
 	var body authdto.AccountSigninDTO
 	aservice := authservice.NewAuthService(r.Context(), s.db)
