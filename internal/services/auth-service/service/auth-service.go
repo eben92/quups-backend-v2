@@ -47,21 +47,27 @@ func (s *service) Signin(body authdto.SignInRequestDTO) (authdto.ResponseUserDTO
 }
 
 // AccountSignin handles the user account sign-in process and returns the response user DTO and an error, if any.
-func (s *service) AccountSignin(body authdto.AccountSigninDTO) (authdto.ResponseUserDTO, error) {
-	result := authdto.ResponseUserDTO{}
-	uservice := userservice.NewUserService(s.ctx, s.db)
-	u, err := uservice.FindByID()
+func (s *service) AccountSignin(body authdto.AccountSigninDTO) (userdto.UserTeamDTO, error) {
+
+	authuser, err := local_jwt.GetAuthContext(s.ctx)
 
 	if err != nil {
+
+		return userdto.UserTeamDTO{}, fmt.Errorf("error getting account. Please try again")
+	}
+
+	uservice := userservice.NewUserService(s.ctx, s.db)
+	result, err := uservice.GetUserTeam(body.ID)
+
+	if err != nil {
+
 		return result, fmt.Errorf("error getting account. Please try again")
 	}
 
-	result = mapToUserDTO(u)
-
 	tstring, err := generateAccessToken(local_jwt.AuthContext{
-		Sub:       result.ID,
-		Name:      result.Name,
-		CompanyID: body.ID,
+		Sub:       authuser.Sub,
+		Name:      authuser.Name,
+		CompanyID: result.CompanyID,
 	})
 
 	if err != nil {

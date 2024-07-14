@@ -36,6 +36,8 @@ type UserService interface {
 	// GetUserTeams retrieves the teams that a user belongs to.
 	GetUserTeams() ([]userdto.UserTeamDTO, error)
 
+	GetUserTeam(companyid string) (userdto.UserTeamDTO, error)
+
 	// CreateUserTeam creates a new user team for a given company.
 	CreateUserTeam(companyId string) (repository.Member, error)
 

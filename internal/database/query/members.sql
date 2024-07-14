@@ -33,6 +33,20 @@ JOIN companies ON members.company_id = companies.id
 WHERE members.user_id = sqlc.arg(user_id);
 
 
+-- name: GetUserTeam :one
+SELECT members.*,  
+    companies.email as company_email,
+    companies.name as company_name,
+    companies.slug as company_slug,
+    companies.banner_url as company_banner_url,
+    companies.image_url as company_image_url,
+    companies.about as company_about,
+    companies.is_active as company_is_active
+FROM members
+JOIN companies ON members.company_id = companies.id
+WHERE members.company_id = sqlc.arg(company_id) AND members.user_id = sqlc.arg(user_id);    
+
+
 --SELECT members.*, companies.*
 --FROM members
 --JOIN companies ON members.company_id = companies.id

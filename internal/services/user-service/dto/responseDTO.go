@@ -53,11 +53,12 @@ type TeamCompanyDTO struct {
 }
 
 type UserTeamDTO struct {
-	Company   TeamCompanyDTO `json:"company"`
-	ID        string         `json:"id"`
-	Role      string         `json:"role"`
-	Status    string         `json:"status"`
-	Msisdn    string         `json:"msisdn"`
-	Email     string         `json:"email"`
-	CompanyID string         `json:"company_id"`
+	Company     TeamCompanyDTO `json:"company"`
+	ID          string         `json:"id"`
+	Role        string         `json:"role"`
+	Status      string         `json:"status"`
+	Msisdn      string         `json:"msisdn"`
+	Email       string         `json:"email"`
+	CompanyID   string         `json:"company_id"`
+	AccessToken string         `json:"-"`
 }

@@ -292,12 +292,47 @@ func (s *service) GetUserTeams() ([]userdto.UserTeamDTO, error) {
 	}
 
 	for _, tm := range t {
-		ut := mapToUserTeamInternalDTO(tm)
+		ut := mapToUserTeamsInternalDTO(tm)
 
 		results = append(results, ut)
 	}
 
 	slog.Info("user teams retrieved successfully")
+
+	return results, nil
+}
+
+func (s *service) GetUserTeam(companyid string) (userdto.UserTeamDTO, error) {
+	results := userdto.UserTeamDTO{}
+	authuser, err := local_jwt.GetAuthContext(s.ctx)
+	slog.Info("getting user team", "user:", authuser.Name)
+
+	if err != nil {
+		slog.Error("GetUserTeam", "Error", err)
+
+		return results, errors.New("no data found")
+
+	}
+
+	repo := s.db.NewRepository()
+
+	t, err := repo.GetUserTeam(s.ctx, model.GetUserTeamParams{
+		CompanyID: companyid,
+		UserID: sql.NullString{
+			String: authuser.Sub,
+			Valid:  true,
+		},
+	})
+
+	if err != nil {
+		slog.Error("error fetching user team err: ", "Error", err)
+
+		return results, errors.New("could not find user team")
+	}
+
+	results = mapToUserTeamInternalDTO(t)
+
+	slog.Info("user team retrieved successfully")
 
 	return results, nil
 }
@@ -383,7 +418,37 @@ func mapToUserInternalDTO(user model.User) userdto.UserInternalDTO {
 	return dto
 }
 
-func mapToUserTeamInternalDTO(t model.GetUserTeamsRow) userdto.UserTeamDTO {
+func mapToUserTeamInternalDTO(t model.GetUserTeamRow) userdto.UserTeamDTO {
+	tm := userdto.UserTeamDTO{
+		ID:        t.ID,
+		CompanyID: t.CompanyID,
+		Msisdn:    t.Msisdn,
+		Status:    t.Status,
+		Role:      t.Role,
+		Company: userdto.TeamCompanyDTO{
+			ID:    t.CompanyID,
+			Name:  t.CompanyName,
+			Email: t.CompanyEmail,
+			Slug:  t.CompanySlug,
+		},
+	}
+
+	if t.Email.Valid {
+		tm.Email = t.Email.String
+	}
+
+	if t.CompanyBannerUrl.Valid {
+		tm.Company.BannerUrl = t.CompanyBannerUrl.String
+	}
+
+	if t.CompanyImageUrl.Valid {
+		tm.Company.ImageUrl = t.CompanyImageUrl.String
+	}
+
+	return tm
+}
+
+func mapToUserTeamsInternalDTO(t model.GetUserTeamsRow) userdto.UserTeamDTO {
 	tm := userdto.UserTeamDTO{
 		ID:        t.ID,
 		CompanyID: t.CompanyID,
