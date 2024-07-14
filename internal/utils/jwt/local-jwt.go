@@ -225,10 +225,37 @@ func GetAuthContext(ctx context.Context) (AuthContext, error) {
 		return AuthContext{}, ErrNoTokenFound
 	}
 
+	var companyID string
+	var sub string
+	var issuer string
+	var name string
+
+	if claims["client_id"] != nil {
+		companyID = claims["client_id"].(string)
+	}
+
+	if claims["sub"] != nil {
+		sub = claims["sub"].(string)
+	}
+
+	if claims["issuer"] != nil {
+		issuer = claims["issuer"].(string)
+	}
+
+	if claims["name"] != nil {
+		name = claims["name"].(string)
+	}
+
+	if sub == "" {
+		slog.Error("GetAuthContext - missing claims", "Error", ErrNoTokenFound)
+
+		return AuthContext{}, ErrNoTokenFound
+	}
+
 	return AuthContext{
-		Sub:       claims["sub"].(string),
-		Issuer:    claims["issuer"].(string),
-		Name:      claims["name"].(string),
-		CompanyID: claims["client_id"].(string),
+		Sub:       sub,
+		Issuer:    issuer,
+		Name:      name,
+		CompanyID: companyID,
 	}, nil
 }
