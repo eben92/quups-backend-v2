@@ -88,13 +88,7 @@ func (s *service) prepareUserParams(body userdto.CreateUserParams) (model.Create
 		},
 	}
 
-	u, err := s.FindByEmail(p.Email)
-
-	if err != nil {
-		slog.Error("createUserParams - FindByEmail", "Error", err)
-
-		return p, fmt.Errorf("error creating account. Please try again")
-	}
+	u, _ := s.FindByEmail(p.Email)
 
 	if u.ID != "" {
 		slog.Error("User with email  already exist", "Error", body.Email)
@@ -106,14 +100,15 @@ func (s *service) prepareUserParams(body userdto.CreateUserParams) (model.Create
 		p.Gender.Valid = true
 	}
 
-	msidsn, _ := utils.ParseMsisdn(body.Msisdn)
+	msidsn, ok := utils.ParseMsisdn(body.Msisdn)
 
-	u, err = s.FindByMsisdn(msidsn)
+	if !ok {
+		slog.Error("createUserParams - ParseMsisdn", "Error", body.Msisdn)
 
-	if err != nil {
-		slog.Error("createUserParams - FindByMsisdn", "Error", err)
-		return p, fmt.Errorf("error creating account please try again")
+		return p, fmt.Errorf("invalid phone number")
 	}
+
+	u, _ = s.FindByMsisdn(msidsn)
 
 	if u.ID != "" {
 		slog.Error("User with msisdn [%s] already exist", "Error", body.Msisdn)
@@ -140,7 +135,7 @@ func (s *service) Create(body userdto.CreateUserParams) (userdto.UserInternalDTO
 	if err != nil {
 		slog.Error("failed to create user", "Error", err)
 
-		return result, err
+		return result, fmt.Errorf("failed to create user. Please try again later")
 	}
 
 	repo := s.db.NewRepository()
