@@ -54,5 +54,6 @@ func TestCreateUser_Integration(t *testing.T) {
 	require.NotEmpty(t, user.Name)
 	require.NotEmpty(t, user.Msisdn)
 	require.NotEmpty(t, user.Gender)
+	require.NotEmpty(t, user.Password)
 
 }
