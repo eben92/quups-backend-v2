@@ -71,7 +71,9 @@ func (s *Controller) Signin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	access_token := user.AccessToken
-	setCookie(w, access_token)
+	setCookie(w, Cookie{
+		Value: access_token,
+	})
 
 	response.WrapInApiResponse(&apiutils.ApiResponseParams{
 		StatusCode: http.StatusOK,
@@ -114,7 +116,9 @@ func (s *Controller) AccountSignin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	access_token := user.AccessToken
-	setCookie(w, access_token)
+	setCookie(w, Cookie{
+		Value: access_token,
+	})
 
 	response.WrapInApiResponse(&apiutils.ApiResponseParams{
 		StatusCode: http.StatusOK,
@@ -185,55 +189,44 @@ func (s *Controller) Signout(w http.ResponseWriter, r *http.Request) {
 	if strings.ToLower(querytype) == "soft" {
 		aservice := authservice.NewAuthService(r.Context(), s.db)
 
-		tstring, err := aservice.SoftSignout()
+		softCookie, err := aservice.SoftSignout()
 
-		if err != nil {
-			response := apiutils.New(w, r)
-			response.WrapInApiResponse(&apiutils.ApiResponseParams{
-				StatusCode: http.StatusForbidden,
-				Results:    nil,
-				Message:    "error signing out",
+		if err == nil {
+			setCookie(w, Cookie{
+				Value: softCookie,
 			})
-
+			w.WriteHeader(http.StatusNoContent)
 			return
 		}
 
-		setCookie(w, tstring)
-		response := apiutils.New(w, r)
-		response.WrapInApiResponse(&apiutils.ApiResponseParams{
-			StatusCode: http.StatusOK,
-			Results:    nil,
-			Message:    success,
-		})
-
-		return
 	}
 
-	cookie := &http.Cookie{
-		Name:    local_jwt.COOKIE_NAME,
+	setCookie(w, Cookie{
 		Value:   "",
 		Expires: time.Now().Add(-time.Hour),
-	}
-
-	http.SetCookie(w, cookie)
-
-	response := apiutils.New(w, r)
-	response.WrapInApiResponse(&apiutils.ApiResponseParams{
-		StatusCode: http.StatusOK,
-		Results:    nil,
-		Message:    success,
 	})
-
+	w.WriteHeader(http.StatusNoContent)
 }
 
-func setCookie(w http.ResponseWriter, t string) {
+type Cookie struct {
+	Value   string
+	Expires time.Time
+}
+
+func setCookie(w http.ResponseWriter, c Cookie) {
+	exp := c.Expires
+
+	if exp.IsZero() {
+		exp = time.Now().Add(time.Hour * 24 * 30)
+	}
+
 	cookie := &http.Cookie{
 		Name:     local_jwt.COOKIE_NAME,
-		Value:    t,
+		Value:    c.Value,
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
 		HttpOnly: false,
-		Expires:  time.Now().Add(time.Hour * 24 * 30),
+		Expires:  exp,
 		// Domain:   "*",
 	}
 

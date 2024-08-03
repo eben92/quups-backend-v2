@@ -19,3 +19,11 @@ type Bank struct {
 	Type             string      `json:"type"`
 	UpdatedAt        time.Time   `json:"updatedAt"`
 }
+
+type ResolvedAccount struct {
+	AccountNumber string `json:"account_number"`
+	AccountName   string `json:"account_name"`
+	BankID        int    `json:"bank_id"`
+	FirstName     string `json:"first_name"`
+	LastName      string `json:"last_name"`
+}
