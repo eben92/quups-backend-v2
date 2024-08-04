@@ -64,6 +64,7 @@ type Company struct {
 	InvitationCode sql.NullString `json:"invitation_code"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
+	HasOnboarded   bool           `json:"has_onboarded"`
 }
 
 type Configuration struct {

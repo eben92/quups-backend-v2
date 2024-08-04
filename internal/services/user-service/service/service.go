@@ -34,9 +34,9 @@ type service struct {
 // UserService represents the interface for user-related operations.
 type UserService interface {
 	// GetUserTeams retrieves the teams that a user belongs to.
-	GetUserTeams() ([]userdto.UserTeamDTO, error)
+	GetUserTeams() ([]userdto.TeamMemberDTO, error)
 
-	GetUserTeam(companyid string) (userdto.UserTeamDTO, error)
+	GetUserTeam(companyid string) (userdto.TeamMemberDTO, error)
 
 	// CreateUserTeam creates a new user team for a given company.
 	CreateUserTeam(companyId string) (repository.Member, error)

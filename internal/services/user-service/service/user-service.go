@@ -260,7 +260,7 @@ func (s *service) FindByMsisdn(msisdn utils.Msisdn) (userdto.UserInternalDTO, er
 
 // GetUserTeams retrieves the teams associated with the user.
 // It returns a slice of userdto.UserTeamDTO and an error if any.
-func (s *service) GetUserTeams() ([]userdto.UserTeamDTO, error) {
+func (s *service) GetUserTeams() ([]userdto.TeamMemberDTO, error) {
 
 	authuser, err := local_jwt.GetAuthContext(s.ctx)
 	slog.Info("getting user teams", "user:", authuser.Sub)
@@ -274,7 +274,7 @@ func (s *service) GetUserTeams() ([]userdto.UserTeamDTO, error) {
 
 	repo := s.db.NewRepository()
 
-	results := []userdto.UserTeamDTO{}
+	results := []userdto.TeamMemberDTO{}
 	t, err := repo.GetUserTeams(s.ctx, sql.NullString{
 		String: authuser.Sub,
 		Valid:  true,
@@ -297,8 +297,8 @@ func (s *service) GetUserTeams() ([]userdto.UserTeamDTO, error) {
 	return results, nil
 }
 
-func (s *service) GetUserTeam(companyid string) (userdto.UserTeamDTO, error) {
-	results := userdto.UserTeamDTO{}
+func (s *service) GetUserTeam(companyid string) (userdto.TeamMemberDTO, error) {
+	results := userdto.TeamMemberDTO{}
 	authuser, err := local_jwt.GetAuthContext(s.ctx)
 	slog.Info("getting user team", "user:", authuser.Name)
 
@@ -413,8 +413,8 @@ func mapToUserInternalDTO(user model.User) userdto.UserInternalDTO {
 	return dto
 }
 
-func mapToUserTeamInternalDTO(t model.GetUserTeamRow) userdto.UserTeamDTO {
-	tm := userdto.UserTeamDTO{
+func mapToUserTeamInternalDTO(t model.GetUserTeamRow) userdto.TeamMemberDTO {
+	tm := userdto.TeamMemberDTO{
 		ID:        t.ID,
 		CompanyID: t.CompanyID,
 		Msisdn:    t.Msisdn,
@@ -443,31 +443,25 @@ func mapToUserTeamInternalDTO(t model.GetUserTeamRow) userdto.UserTeamDTO {
 	return tm
 }
 
-func mapToUserTeamsInternalDTO(t model.GetUserTeamsRow) userdto.UserTeamDTO {
-	tm := userdto.UserTeamDTO{
+func mapToUserTeamsInternalDTO(t model.GetUserTeamsRow) userdto.TeamMemberDTO {
+	tm := userdto.TeamMemberDTO{
 		ID:        t.ID,
 		CompanyID: t.CompanyID,
 		Msisdn:    t.Msisdn,
 		Status:    t.Status,
 		Role:      t.Role,
+		Email:     t.Email.String,
 		Company: userdto.TeamCompanyDTO{
-			ID:    t.CompanyID,
-			Name:  t.CompanyName,
-			Email: t.CompanyEmail,
-			Slug:  t.CompanySlug,
+			ID:           t.CompanyID,
+			Name:         t.CompanyName,
+			Email:        t.CompanyEmail,
+			Slug:         t.CompanySlug,
+			Msisdn:       t.CompanyMsisdn,
+			HasOnboarded: t.CompanyHasOnboarded,
+			IsActive:     t.CompanyIsActive,
+			ImageUrl:     t.CompanyImageUrl.String,
+			BannerUrl:    t.CompanyBannerUrl.String,
 		},
-	}
-
-	if t.Email.Valid {
-		tm.Email = t.Email.String
-	}
-
-	if t.CompanyBannerUrl.Valid {
-		tm.Company.BannerUrl = t.CompanyBannerUrl.String
-	}
-
-	if t.CompanyImageUrl.Valid {
-		tm.Company.ImageUrl = t.CompanyImageUrl.String
 	}
 
 	return tm

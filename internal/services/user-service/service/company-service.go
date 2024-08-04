@@ -282,6 +282,7 @@ func mapToCompanyInternalDTO(c model.Company) userdto.CompanyInternalDTO {
 		Slug:           c.Slug,
 		TotalSales:     c.TotalSales,
 		IsActive:       c.IsActive,
+		HasOnboarded:   c.HasOnboarded,
 		CreatedAt:      c.CreatedAt,
 		UpdatedAt:      c.UpdatedAt,
 	}

@@ -118,7 +118,9 @@ SELECT members.id, members.name, members.msisdn, members.email, members.role, me
     companies.banner_url as company_banner_url,
     companies.image_url as company_image_url,
     companies.about as company_about,
-    companies.is_active as company_is_active
+    companies.is_active as company_is_active,
+    companies.has_onboarded as company_has_onboarded,
+    companies.msisdn as company_msisdn
 FROM members
 JOIN companies ON members.company_id = companies.id
 WHERE members.company_id = $1 AND members.user_id = $2
@@ -130,23 +132,25 @@ type GetUserTeamParams struct {
 }
 
 type GetUserTeamRow struct {
-	ID               string         `json:"id"`
-	Name             string         `json:"name"`
-	Msisdn           string         `json:"msisdn"`
-	Email            sql.NullString `json:"email"`
-	Role             string         `json:"role"`
-	Status           string         `json:"status"`
-	CompanyID        string         `json:"company_id"`
-	UserID           sql.NullString `json:"user_id"`
-	CreatedAt        time.Time      `json:"created_at"`
-	UpdatedAt        time.Time      `json:"updated_at"`
-	CompanyEmail     string         `json:"company_email"`
-	CompanyName      string         `json:"company_name"`
-	CompanySlug      string         `json:"company_slug"`
-	CompanyBannerUrl sql.NullString `json:"company_banner_url"`
-	CompanyImageUrl  sql.NullString `json:"company_image_url"`
-	CompanyAbout     sql.NullString `json:"company_about"`
-	CompanyIsActive  bool           `json:"company_is_active"`
+	ID                  string         `json:"id"`
+	Name                string         `json:"name"`
+	Msisdn              string         `json:"msisdn"`
+	Email               sql.NullString `json:"email"`
+	Role                string         `json:"role"`
+	Status              string         `json:"status"`
+	CompanyID           string         `json:"company_id"`
+	UserID              sql.NullString `json:"user_id"`
+	CreatedAt           time.Time      `json:"created_at"`
+	UpdatedAt           time.Time      `json:"updated_at"`
+	CompanyEmail        string         `json:"company_email"`
+	CompanyName         string         `json:"company_name"`
+	CompanySlug         string         `json:"company_slug"`
+	CompanyBannerUrl    sql.NullString `json:"company_banner_url"`
+	CompanyImageUrl     sql.NullString `json:"company_image_url"`
+	CompanyAbout        sql.NullString `json:"company_about"`
+	CompanyIsActive     bool           `json:"company_is_active"`
+	CompanyHasOnboarded bool           `json:"company_has_onboarded"`
+	CompanyMsisdn       string         `json:"company_msisdn"`
 }
 
 func (q *Queries) GetUserTeam(ctx context.Context, arg GetUserTeamParams) (GetUserTeamRow, error) {
@@ -170,6 +174,8 @@ func (q *Queries) GetUserTeam(ctx context.Context, arg GetUserTeamParams) (GetUs
 		&i.CompanyImageUrl,
 		&i.CompanyAbout,
 		&i.CompanyIsActive,
+		&i.CompanyHasOnboarded,
+		&i.CompanyMsisdn,
 	)
 	return i, err
 }
@@ -182,30 +188,34 @@ SELECT members.id, members.name, members.msisdn, members.email, members.role, me
     companies.banner_url as company_banner_url,
     companies.image_url as company_image_url,
     companies.about as company_about,
-    companies.is_active as company_is_active
+    companies.is_active as company_is_active,
+    companies.has_onboarded as company_has_onboarded,
+    companies.msisdn as company_msisdn
 FROM members
 JOIN companies ON members.company_id = companies.id
 WHERE members.user_id = $1
 `
 
 type GetUserTeamsRow struct {
-	ID               string         `json:"id"`
-	Name             string         `json:"name"`
-	Msisdn           string         `json:"msisdn"`
-	Email            sql.NullString `json:"email"`
-	Role             string         `json:"role"`
-	Status           string         `json:"status"`
-	CompanyID        string         `json:"company_id"`
-	UserID           sql.NullString `json:"user_id"`
-	CreatedAt        time.Time      `json:"created_at"`
-	UpdatedAt        time.Time      `json:"updated_at"`
-	CompanyEmail     string         `json:"company_email"`
-	CompanyName      string         `json:"company_name"`
-	CompanySlug      string         `json:"company_slug"`
-	CompanyBannerUrl sql.NullString `json:"company_banner_url"`
-	CompanyImageUrl  sql.NullString `json:"company_image_url"`
-	CompanyAbout     sql.NullString `json:"company_about"`
-	CompanyIsActive  bool           `json:"company_is_active"`
+	ID                  string         `json:"id"`
+	Name                string         `json:"name"`
+	Msisdn              string         `json:"msisdn"`
+	Email               sql.NullString `json:"email"`
+	Role                string         `json:"role"`
+	Status              string         `json:"status"`
+	CompanyID           string         `json:"company_id"`
+	UserID              sql.NullString `json:"user_id"`
+	CreatedAt           time.Time      `json:"created_at"`
+	UpdatedAt           time.Time      `json:"updated_at"`
+	CompanyEmail        string         `json:"company_email"`
+	CompanyName         string         `json:"company_name"`
+	CompanySlug         string         `json:"company_slug"`
+	CompanyBannerUrl    sql.NullString `json:"company_banner_url"`
+	CompanyImageUrl     sql.NullString `json:"company_image_url"`
+	CompanyAbout        sql.NullString `json:"company_about"`
+	CompanyIsActive     bool           `json:"company_is_active"`
+	CompanyHasOnboarded bool           `json:"company_has_onboarded"`
+	CompanyMsisdn       string         `json:"company_msisdn"`
 }
 
 func (q *Queries) GetUserTeams(ctx context.Context, userID sql.NullString) ([]GetUserTeamsRow, error) {
@@ -235,6 +245,8 @@ func (q *Queries) GetUserTeams(ctx context.Context, userID sql.NullString) ([]Ge
 			&i.CompanyImageUrl,
 			&i.CompanyAbout,
 			&i.CompanyIsActive,
+			&i.CompanyHasOnboarded,
+			&i.CompanyMsisdn,
 		); err != nil {
 			return nil, err
 		}

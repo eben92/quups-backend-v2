@@ -94,7 +94,7 @@ db-reset:
 	@goose -dir "$(GOOSE_MIGRATION_DIR)" $(GOOSE_DRIVER) "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USERNAME) password=$(DB_PASSWORD) dbname=$(DB_DATABASE) sslmode=disable" reset
 	@echo "Diffed!"
 
-db-status:
+db-diff:
 	@echo "Status..."
 	@goose -dir "$(GOOSE_MIGRATION_DIR)" $(GOOSE_DRIVER) "host=$(DB_HOST) port=$(DB_PORT) user=$(DB_USERNAME) password=$(DB_PASSWORD) dbname=$(DB_DATABASE) sslmode=disable" status
 	@echo "DONE!"		

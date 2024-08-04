@@ -29,7 +29,8 @@ UPDATE companies SET
         about = $5,
         tin = $6,
         is_active = $7,
-        msisdn = $8
+        msisdn = $8,
+        has_onboarded = $9
     WHERE id = $1
 RETURNING *;
 
