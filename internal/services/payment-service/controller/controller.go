@@ -12,6 +12,7 @@ type controller struct {
 type paymentController interface {
 	GetBankList(w http.ResponseWriter, r *http.Request)
 	ResolveBankAccount(w http.ResponseWriter, r *http.Request)
+	SetupCompanyAccount(w http.ResponseWriter, r *http.Request)
 }
 
 func NewPaymentController(db database.Service) paymentController {

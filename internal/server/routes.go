@@ -69,6 +69,7 @@ func (s *Server) paymentController(r chi.Router) {
 
 	r.Get("/supported-banks", handler.GetBankList)
 	r.Get("/resolve-account", handler.ResolveBankAccount)
+	r.Post("/setup", handler.SetupCompanyAccount)
 }
 
 func (s *Server) userController(r chi.Router) {

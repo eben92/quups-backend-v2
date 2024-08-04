@@ -1,7 +1,9 @@
 package paymentcontroller
 
 import (
+	"encoding/json"
 	"net/http"
+	paymentdto "quups-backend/internal/services/payment-service/dto"
 	"quups-backend/internal/services/payment-service/models"
 	paymentservice "quups-backend/internal/services/payment-service/service"
 	apiutils "quups-backend/internal/utils/api"
@@ -76,5 +78,58 @@ func (c *controller) ResolveBankAccount(w http.ResponseWriter, r *http.Request) 
 		StatusCode: http.StatusOK,
 		Message:    "account number resolved successfully",
 		Results:    res,
+	})
+}
+
+func (c *controller) SetupCompanyAccount(w http.ResponseWriter, r *http.Request) {
+	var reqBody paymentdto.ReqPaymentDTO
+
+	err := json.NewDecoder(r.Body).Decode(&reqBody)
+	response := apiutils.New(w, r)
+
+	if err != nil {
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
+			StatusCode: http.StatusBadRequest,
+			Message:    "invalid request body",
+			Results:    nil,
+		})
+
+		return
+	}
+
+	defer r.Body.Close()
+
+	err = paymentdto.ValidateReqPaymentDTO(reqBody)
+
+	if err != nil {
+
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
+			StatusCode: http.StatusBadRequest,
+			Message:    err.Error(),
+			Results:    nil,
+		})
+
+		return
+	}
+
+	s := paymentservice.NewPaymentService(r.Context(), c.db)
+
+	err = s.SetupAccount(reqBody)
+
+	if err != nil {
+
+		response.WrapInApiResponse(&apiutils.ApiResponseParams{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
+			Results:    nil,
+		})
+
+		return
+	}
+
+	response.WrapInApiResponse(&apiutils.ApiResponseParams{
+		StatusCode: http.StatusOK,
+		Message:    "successfully setup payment account ",
+		Results:    nil,
 	})
 }

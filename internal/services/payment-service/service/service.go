@@ -16,6 +16,7 @@ type service struct {
 type PaymentService interface {
 	// GetBankList returns a list of supported banks.
 	GetBankList(bankType models.BankType) ([]paymentdto.Bank, error)
+	SetupAccount(bankType paymentdto.ReqPaymentDTO) error
 	ResolveBankAccount(bankCode, accountNumber string) (paymentdto.ResolvedAccount, error)
 }
 

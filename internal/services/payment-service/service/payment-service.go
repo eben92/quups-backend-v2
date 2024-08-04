@@ -117,3 +117,8 @@ func (s *service) ResolveBankAccount(bankCode, accountNumber string) (paymentdto
 
 	return result, nil
 }
+
+func (s *service) SetupAccount(data paymentdto.ReqPaymentDTO) error {
+
+	return nil
+}
