@@ -77,7 +77,7 @@ func (s *Server) userController(r chi.Router) {
 	authhandler := authcontroller.New(s.db)
 
 	r.Get("/companies", handler.GetUserCompanies)
-	r.Get("/companies/{id}", handler.GetUserCompany)
+	r.Get("/companies/{id}", authhandler.GetUserCompany)
 	r.Post("/account", authhandler.AccountSignin)
 
 	// user-company activity routes

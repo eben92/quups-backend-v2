@@ -26,7 +26,7 @@ func NewCompanyController(db database.Service) companyController {
 
 type userController interface {
 	GetUserCompanies(w http.ResponseWriter, r *http.Request)
-	GetUserCompany(w http.ResponseWriter, r *http.Request)
+	// GetUserCompany(w http.ResponseWriter, r *http.Request)
 }
 
 func NewUserController(db database.Service) userController {
