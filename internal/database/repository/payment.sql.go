@@ -19,12 +19,13 @@ INSERT INTO payment_accounts (
         last_name,
         bank_branch,
         bank_code,
-        bank_name
+        bank_name,
+        bank_id
     )
 VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
     )
-RETURNING id, account_type, account_number, first_name, last_name, bank_name, bank_code, bank_branch, company_id, created_at, updated_at
+RETURNING id, account_type, account_number, first_name, last_name, bank_name, bank_code, bank_branch, company_id, created_at, updated_at, is_deleted, bank_id
 `
 
 type CreatePaymentAccountParams struct {
@@ -36,6 +37,7 @@ type CreatePaymentAccountParams struct {
 	BankBranch    string `json:"bank_branch"`
 	BankCode      string `json:"bank_code"`
 	BankName      string `json:"bank_name"`
+	BankID        string `json:"bank_id"`
 }
 
 func (q *Queries) CreatePaymentAccount(ctx context.Context, arg CreatePaymentAccountParams) (PaymentAccount, error) {
@@ -48,6 +50,7 @@ func (q *Queries) CreatePaymentAccount(ctx context.Context, arg CreatePaymentAcc
 		arg.BankBranch,
 		arg.BankCode,
 		arg.BankName,
+		arg.BankID,
 	)
 	var i PaymentAccount
 	err := row.Scan(
@@ -62,6 +65,8 @@ func (q *Queries) CreatePaymentAccount(ctx context.Context, arg CreatePaymentAcc
 		&i.CompanyID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IsDeleted,
+		&i.BankID,
 	)
 	return i, err
 }
@@ -227,7 +232,7 @@ func (q *Queries) CreatePayoutAccount(ctx context.Context, arg CreatePayoutAccou
 }
 
 const getPaymentAccountByCompanyID = `-- name: GetPaymentAccountByCompanyID :one
-SELECT id, account_type, account_number, first_name, last_name, bank_name, bank_code, bank_branch, company_id, created_at, updated_at FROM payment_accounts
+SELECT id, account_type, account_number, first_name, last_name, bank_name, bank_code, bank_branch, company_id, created_at, updated_at, is_deleted, bank_id FROM payment_accounts
  WHERE company_id = $1
  LIMIT 1
 `
@@ -247,6 +252,8 @@ func (q *Queries) GetPaymentAccountByCompanyID(ctx context.Context, companyID st
 		&i.CompanyID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IsDeleted,
+		&i.BankID,
 	)
 	return i, err
 }
@@ -322,7 +329,7 @@ UPDATE payment_accounts SET
         bank_code = $7,
         bank_name = $8
     WHERE company_id = $1
-RETURNING id, account_type, account_number, first_name, last_name, bank_name, bank_code, bank_branch, company_id, created_at, updated_at
+RETURNING id, account_type, account_number, first_name, last_name, bank_name, bank_code, bank_branch, company_id, created_at, updated_at, is_deleted, bank_id
 `
 
 type UpdatePaymentAccountByCompanyIDParams struct {
@@ -360,6 +367,8 @@ func (q *Queries) UpdatePaymentAccountByCompanyID(ctx context.Context, arg Updat
 		&i.CompanyID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IsDeleted,
+		&i.BankID,
 	)
 	return i, err
 }

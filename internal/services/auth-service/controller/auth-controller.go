@@ -180,7 +180,7 @@ func (s *Controller) Signup(w http.ResponseWriter, r *http.Request) {
 
 	response.WrapInApiResponse(&apiutils.ApiResponseParams{
 		StatusCode: http.StatusCreated,
-		Results:    user, // TODO: shoudld we take this out?
+		Results:    user, // TODO: should we take this out?
 		Message:    success,
 	})
 }

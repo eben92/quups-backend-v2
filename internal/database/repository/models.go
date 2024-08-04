@@ -65,6 +65,7 @@ type Company struct {
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 	HasOnboarded   bool           `json:"has_onboarded"`
+	IsDeleted      bool           `json:"is_deleted"`
 }
 
 type Configuration struct {
@@ -103,6 +104,8 @@ type PaymentAccount struct {
 	CompanyID     string    `json:"company_id"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
+	IsDeleted     bool      `json:"is_deleted"`
+	BankID        string    `json:"bank_id"`
 }
 
 type PaymentAccountDetail struct {

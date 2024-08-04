@@ -30,7 +30,7 @@ INSERT INTO companies (
 VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
     )
-RETURNING id, name, slug, about, msisdn, email, tin, image_url, banner_url, brand_type, owner_id, total_sales, is_active, currency_code, invitation_code, created_at, updated_at, has_onboarded
+RETURNING id, name, slug, about, msisdn, email, tin, image_url, banner_url, brand_type, owner_id, total_sales, is_active, currency_code, invitation_code, created_at, updated_at, has_onboarded, is_deleted
 `
 
 type CreateCompanyParams struct {
@@ -87,6 +87,7 @@ func (q *Queries) CreateCompany(ctx context.Context, arg CreateCompanyParams) (C
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.HasOnboarded,
+		&i.IsDeleted,
 	)
 	return i, err
 }
@@ -102,7 +103,7 @@ func (q *Queries) DeleteCompany(ctx context.Context, id string) error {
 }
 
 const getAllCompanies = `-- name: GetAllCompanies :many
-SELECT id, name, slug, about, msisdn, email, tin, image_url, banner_url, brand_type, owner_id, total_sales, is_active, currency_code, invitation_code, created_at, updated_at, has_onboarded 
+SELECT id, name, slug, about, msisdn, email, tin, image_url, banner_url, brand_type, owner_id, total_sales, is_active, currency_code, invitation_code, created_at, updated_at, has_onboarded, is_deleted 
     FROM companies
     LIMIT 10
 `
@@ -135,6 +136,7 @@ func (q *Queries) GetAllCompanies(ctx context.Context) ([]Company, error) {
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.HasOnboarded,
+			&i.IsDeleted,
 		); err != nil {
 			return nil, err
 		}
@@ -150,7 +152,7 @@ func (q *Queries) GetAllCompanies(ctx context.Context) ([]Company, error) {
 }
 
 const getCompanyByID = `-- name: GetCompanyByID :one
-SELECT id, name, slug, about, msisdn, email, tin, image_url, banner_url, brand_type, owner_id, total_sales, is_active, currency_code, invitation_code, created_at, updated_at, has_onboarded FROM companies
+SELECT id, name, slug, about, msisdn, email, tin, image_url, banner_url, brand_type, owner_id, total_sales, is_active, currency_code, invitation_code, created_at, updated_at, has_onboarded, is_deleted FROM companies
     WHERE id = $1
     LIMIT 1
 `
@@ -177,12 +179,13 @@ func (q *Queries) GetCompanyByID(ctx context.Context, id string) (Company, error
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.HasOnboarded,
+		&i.IsDeleted,
 	)
 	return i, err
 }
 
 const getCompanyByName = `-- name: GetCompanyByName :one
-SELECT id, name, slug, about, msisdn, email, tin, image_url, banner_url, brand_type, owner_id, total_sales, is_active, currency_code, invitation_code, created_at, updated_at, has_onboarded FROM companies
+SELECT id, name, slug, about, msisdn, email, tin, image_url, banner_url, brand_type, owner_id, total_sales, is_active, currency_code, invitation_code, created_at, updated_at, has_onboarded, is_deleted FROM companies
     WHERE name = $1
     LIMIT 1
 `
@@ -209,6 +212,7 @@ func (q *Queries) GetCompanyByName(ctx context.Context, name string) (Company, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.HasOnboarded,
+		&i.IsDeleted,
 	)
 	return i, err
 }
@@ -224,7 +228,7 @@ UPDATE companies SET
         msisdn = $8,
         has_onboarded = $9
     WHERE id = $1
-RETURNING id, name, slug, about, msisdn, email, tin, image_url, banner_url, brand_type, owner_id, total_sales, is_active, currency_code, invitation_code, created_at, updated_at, has_onboarded
+RETURNING id, name, slug, about, msisdn, email, tin, image_url, banner_url, brand_type, owner_id, total_sales, is_active, currency_code, invitation_code, created_at, updated_at, has_onboarded, is_deleted
 `
 
 type UpdateCompanyParams struct {
@@ -271,6 +275,7 @@ func (q *Queries) UpdateCompany(ctx context.Context, arg UpdateCompanyParams) (C
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.HasOnboarded,
+		&i.IsDeleted,
 	)
 	return i, err
 }
