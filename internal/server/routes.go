@@ -34,7 +34,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	v1.Route("/auth", s.authController)
 	// protected routes
 	v1.Group(func(pr chi.Router) {
-		pr.Use(local_jwt.Authenticator())
+		pr.Use(local_jwt.UserMiddleware())
 		pr.Route("/user", s.userController)
 		pr.Route("/companies", s.companyController)
 		pr.Route("/payments", s.paymentController)
@@ -75,8 +75,15 @@ func (s *Server) userController(r chi.Router) {
 	handler := usercontroller.NewUserController(s.db)
 	authhandler := authcontroller.New(s.db)
 
-	r.Get("/teams", handler.GetUserTeams)
+	r.Get("/companies", handler.GetUserCompanies)
+	r.Get("/companies/{id}", handler.GetUserCompany)
 	r.Post("/account", authhandler.AccountSignin)
+
+	// user-company activity routes
+	r.Group(func(r chi.Router) {
+		r.Use(local_jwt.CompanyMiddleware())
+	})
+
 	r.Post("/signout", authhandler.Signout)
 }
 

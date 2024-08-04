@@ -40,7 +40,7 @@ func ValidateCreateCompanyQParams(body userdto.CreateCompanyParams) error {
 }
 
 func (s *service) createCompanyParams(body userdto.CreateCompanyParams) (model.CreateCompanyParams, error) {
-	auth_user, err := local_jwt.GetAuthContext(s.ctx)
+	auth_user, err := local_jwt.GetAuthContext(s.ctx, local_jwt.AUTH_CTX_KEY)
 
 	if err != nil {
 		slog.Error("error fetching user", "Error", err)

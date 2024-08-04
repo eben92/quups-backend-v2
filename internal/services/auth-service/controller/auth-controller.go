@@ -117,6 +117,7 @@ func (s *Controller) AccountSignin(w http.ResponseWriter, r *http.Request) {
 
 	access_token := user.AccessToken
 	setCookie(w, Cookie{
+
 		Value: access_token,
 	})
 
@@ -209,6 +210,7 @@ func (s *Controller) Signout(w http.ResponseWriter, r *http.Request) {
 }
 
 type Cookie struct {
+	Name    local_jwt.COOKIE_NAME
 	Value   string
 	Expires time.Time
 }
@@ -220,8 +222,14 @@ func setCookie(w http.ResponseWriter, c Cookie) {
 		exp = time.Now().Add(time.Hour * 24 * 30)
 	}
 
+	name := local_jwt.COOKIE_NAME_USER
+
+	if c.Name != "" {
+		name = c.Name
+	}
+
 	cookie := &http.Cookie{
-		Name:     local_jwt.COOKIE_NAME,
+		Name:     string(name),
 		Value:    c.Value,
 		Path:     "/",
 		SameSite: http.SameSiteLaxMode,
