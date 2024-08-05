@@ -10,15 +10,19 @@ type ReqBankDetailsDTO struct {
 	BankName      string `json:"bank_name"`
 	FirstName     string `json:"first_name"`
 	LastName      string `json:"last_name"`
+	BankType      string `json:"bank_type"`
 }
 
 type ReqBillingAddressDTO struct {
-	TIN        string `json:"tin"`
-	Address    string `json:"address"`
-	City       string `json:"city"`
-	Country    string `json:"country"`
-	PostalCode string `json:"postal_code"`
-	Region     string `json:"region"`
+	TIN              string  `json:"tin"`
+	Address          string  `json:"address"`
+	City             string  `json:"city"`
+	Country          string  `json:"country"`
+	PostalCode       string  `json:"postal_code"`
+	Region           string  `json:"region"`
+	Latitude         float64 `json:"latitude"`
+	Longitude        float64 `json:"longitude"`
+	FormattedAddress string  `json:"formatted_address"`
 }
 
 type ReqPaymentDTO struct {

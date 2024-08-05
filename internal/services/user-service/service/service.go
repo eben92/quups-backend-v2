@@ -76,6 +76,9 @@ type CompanyService interface {
 
 	// GetCompanyByID retrieves a company by its ID and returns the company's internal DTO.
 	GetCompanyByID(id string) (userdto.CompanyInternalDTO, error)
+
+	// GetUserCompany retrieves a company by its ID via context and returns the company's internal DTO.
+	GetUserCompany() (userdto.CompanyInternalDTO, error)
 }
 
 // CompanyService method

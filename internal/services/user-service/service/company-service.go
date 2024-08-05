@@ -265,6 +265,30 @@ func (s *service) GetCompanyByID(id string) (userdto.CompanyInternalDTO, error) 
 	return result, nil
 }
 
+func (s *service) GetUserCompany() (userdto.CompanyInternalDTO, error) {
+	companyCTX, err := local_jwt.GetAuthContext(s.ctx, local_jwt.COMPANY_CTX_KEY)
+
+	if err != nil {
+		slog.Error("error fetching company context", "Error", err)
+
+		return userdto.CompanyInternalDTO{}, errors.New("error fetching company context")
+	}
+
+	repo := s.db.NewRepository()
+	data, err := repo.GetCompanyByID(s.ctx, companyCTX.CompanyID)
+
+	result := userdto.CompanyInternalDTO{}
+
+	if err != nil {
+		slog.Error("error fetching company with id:", "Error", err)
+		return result, fmt.Errorf("company with id [%s] not found", companyCTX.CompanyID)
+	}
+
+	result = mapToCompanyInternalDTO(data)
+
+	return result, nil
+}
+
 func mapToCompanyInternalDTO(c model.Company) userdto.CompanyInternalDTO {
 	dto := userdto.CompanyInternalDTO{
 		ID:             c.ID,

@@ -56,16 +56,16 @@ CREATE TABLE IF NOT EXISTS addresses (
     id  VARCHAR(150) PRIMARY KEY DEFAULT gen_random_uuid(),
     street VARCHAR(100) NOT NULL,
     city VARCHAR(70) NOT NULL,
-    region VARCHAR(70),
-    country VARCHAR(70) NOT NULL,
-    country_code VARCHAR(5) NOT NULL,
+    region VARCHAR(50) NOT NULL DEFAULT 'Eastern', 
+    country VARCHAR(50) NOT NULL DEFAULT 'Ghana',
+    country_code VARCHAR(5) NOT NULL DEFAULT 'GH',
     formatted_address VARCHAR,
     description VARCHAR,
     postal_code VARCHAR(20),
     latitude FLOAT,
     longitude FLOAT,
     msisdn VARCHAR,
-    is_default BOOLEAN DEFAULT FALSE,
+    is_default BOOLEAN NOT NULL DEFAULT FALSE,
     
     user_id VARCHAR(150),
     company_id VARCHAR(150),
@@ -78,12 +78,6 @@ CREATE TABLE IF NOT EXISTS addresses (
 ALTER TABLE "addresses"
     ADD FOREIGN  KEY ("user_id") 
     REFERENCES "users" ("id");
-
--- ALTER TABLE "addresses"
---     ADD FOREIGN  KEY ("company_id") 
---     REFERENCES "company" ("id");
-
-
 
 -- +goose StatementEnd  
 
