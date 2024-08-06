@@ -9,7 +9,7 @@ import (
 
 func GetTestAuthContext() local_jwt.AuthContext {
 	return local_jwt.AuthContext{
-		CompanyID: "testid",
+		CompanyID: "123456",
 		Sub:       "test",
 		Issuer:    "issuer",
 		Name:      "test",
@@ -21,7 +21,7 @@ func SetTestContext(key *local_jwt.ContextKey) (context.Context, error) {
 		"sub":       "test",
 		"issuer":    "issuer",
 		"name":      "test",
-		"client_id": "testid",
+		"client_id": "123456",
 	}
 
 	ctx := context.Background()

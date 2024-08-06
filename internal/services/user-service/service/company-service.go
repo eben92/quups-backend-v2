@@ -266,6 +266,7 @@ func (s *service) GetCompanyByID(id string) (userdto.CompanyInternalDTO, error) 
 }
 
 func (s *service) GetUserCompany() (userdto.CompanyInternalDTO, error) {
+	// todo: use userid and companyid to get company
 	companyCTX, err := local_jwt.GetAuthContext(s.ctx, local_jwt.COMPANY_CTX_KEY)
 
 	if err != nil {
@@ -275,6 +276,8 @@ func (s *service) GetUserCompany() (userdto.CompanyInternalDTO, error) {
 	}
 
 	repo := s.db.NewRepository()
+
+	// todo: find by team
 	data, err := repo.GetCompanyByID(s.ctx, companyCTX.CompanyID)
 
 	result := userdto.CompanyInternalDTO{}
