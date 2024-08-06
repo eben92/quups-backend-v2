@@ -47,6 +47,6 @@ jobs:
           git config --global url."https://${{ secrets.PERSONAL_TOKEN }}@github.com/".insteadOf https://github.com/
 
       - name: Test
-        run: go test ./...
+        run: go test ./... -v
       - name: Build
         run: go build ./...
