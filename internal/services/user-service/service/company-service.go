@@ -22,18 +22,18 @@ func ValidateCreateCompanyQParams(body userdto.CreateCompanyParams) error {
 	}
 
 	if !utils.IsVaildEmail(body.Email) {
-		return invalidEmailErr
+		return errInvalidEmail
 	}
 
 	_, isvalid := utils.IsValidCompanyName(body.Name)
 
 	if !isvalid {
-		return invalidNameErr
+		return errInvalidName
 	}
 
 	_, validmsisdn := utils.ParseMsisdn(body.Msisdn)
 	if !validmsisdn {
-		return invalidMsisdnErr
+		return errInvalidMsisdn
 	}
 
 	return nil
@@ -76,7 +76,7 @@ func (s *service) createCompanyParams(body userdto.CreateCompanyParams) (model.C
 	if body.BrandType != "" && slices.Contains(BRAND_TYPES, body.BrandType) {
 		p.BrandType = body.BrandType
 	} else {
-		return p, invalidBrandTypeErr
+		return p, errInvalidBrandType
 	}
 
 	// TODO: check invitationCode

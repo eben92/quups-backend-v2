@@ -18,12 +18,12 @@ const (
 var BRAND_TYPES = []string{FOOD, FASHION}
 
 var (
-	invalidEmailErr  = errors.New("invalid email address.")
-	invalidMsisdnErr = errors.New("invalid phone number.")
-	invalidNameErr   = errors.New(
-		"name must be greater the 3 characters and excluding any special characters.",
+	errInvalidEmail  = errors.New("invalid email address")
+	errInvalidMsisdn = errors.New("invalid phone number")
+	errInvalidName   = errors.New(
+		"name must be greater the 3 characters and excluding any special characters",
 	)
-	invalidBrandTypeErr = errors.New("invalid brand type. expecting " + FOOD + " or " + FASHION)
+	errInvalidBrandType = errors.New("invalid brand type. expecting " + FOOD + " or " + FASHION)
 )
 
 type service struct {

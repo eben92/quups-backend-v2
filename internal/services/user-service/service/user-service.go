@@ -50,17 +50,17 @@ func ValidateCreateUserQ(body userdto.CreateUserParams) error {
 	}
 
 	if len(strings.TrimSpace(body.Name)) < 3 {
-		return fmt.Errorf("full name must be at least 5 characters.")
+		return fmt.Errorf("full name must be at least 5 characters")
 	}
 
 	if !utils.IsVaildEmail(body.Email) {
-		return invalidEmailErr
+		return errInvalidEmail
 	}
 
 	_, isValidMsisdn := utils.ParseMsisdn(body.Msisdn)
 
 	if !isValidMsisdn {
-		return invalidMsisdnErr
+		return errInvalidMsisdn
 	}
 
 	if len(body.Password) < 4 {
@@ -92,7 +92,7 @@ func (s *service) prepareUserParams(body userdto.CreateUserParams) (model.Create
 
 	if u.ID != "" {
 		slog.Error("User with email  already exist", "Error", body.Email)
-		return p, fmt.Errorf("User with email [%s] already exist", body.Email)
+		return p, fmt.Errorf("user with email [%s] already exist", body.Email)
 	}
 
 	if body.Gender != "" {
@@ -112,12 +112,12 @@ func (s *service) prepareUserParams(body userdto.CreateUserParams) (model.Create
 
 	if u.ID != "" {
 		slog.Error("User with msisdn [%s] already exist", "Error", body.Msisdn)
-		return p, fmt.Errorf("Phone number [%s] already in use", body.Msisdn)
+		return p, fmt.Errorf("phone number [%s] already in use", body.Msisdn)
 	}
 
 	hashpass, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
 	if err != nil {
-		return p, fmt.Errorf("Something went wrong. Please try again. #1")
+		return p, fmt.Errorf("something went wrong. Please try again. #1")
 	}
 
 	p.Password.String = string(hashpass)
