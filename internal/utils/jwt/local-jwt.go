@@ -267,7 +267,7 @@ func GenereteJWT(data AuthContext) ([]byte, error) {
 	if err != nil {
 		slog.Error("Error signing jwt", "Error", err)
 
-		return nil, fmt.Errorf("Something went wrong. Please try again. #2")
+		return nil, fmt.Errorf("something went wrong. Please try again. #2")
 	}
 
 	return []byte(tokenString), nil

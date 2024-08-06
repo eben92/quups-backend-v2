@@ -249,7 +249,7 @@ func (s *service) FindByMsisdn(msisdn utils.Msisdn) (userdto.UserInternalDTO, er
 	if u.ID == "" {
 		slog.Error("user does not exist:", "Error", "no user found")
 
-		return result, fmt.Errorf("no user found.")
+		return result, fmt.Errorf("no user found")
 	}
 
 	result = mapToUserInternalDTO(u)
@@ -322,7 +322,7 @@ func (s *service) GetUserTeam(companyid string) (userdto.TeamMemberDTO, error) {
 	if err != nil {
 		slog.Error("error fetching user team err: ", "Error", err)
 
-		return results, errors.New("could not find user company.")
+		return results, errors.New("could not find user company")
 	}
 
 	results = mapToUserTeamInternalDTO(t)

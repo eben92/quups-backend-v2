@@ -45,7 +45,7 @@ func ConvertToLocalMsisdn(msisdn string) ([]byte, error) {
 	msisdn = ReplacePrefix(msisdn, MSISDN_PREFIX_P233, DEFAULT_MSISDN_PREFIX)
 
 	if !strings.HasPrefix(msisdn, DEFAULT_MSISDN_PREFIX) {
-		return []byte(msisdn), errors.New("Invalid phone number")
+		return []byte(msisdn), errors.New("invalid phone number")
 	}
 
 	return []byte(msisdn), nil
