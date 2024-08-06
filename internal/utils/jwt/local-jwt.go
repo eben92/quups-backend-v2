@@ -23,8 +23,8 @@ const (
 
 var (
 	JWT_SECRET      = os.Getenv("JWT_SECRET")
-	AUTH_CTX_KEY    = &contextKey{"authcontext"}
-	COMPANY_CTX_KEY = &contextKey{"companycontext"}
+	AUTH_CTX_KEY    = &ContextKey{"authcontext"}
+	COMPANY_CTX_KEY = &ContextKey{"companycontext"}
 )
 
 type AuthContext struct {
@@ -45,7 +45,7 @@ type AuthContext struct {
 	CompanyID string
 }
 
-type contextKey struct {
+type ContextKey struct {
 	name string
 }
 
@@ -300,7 +300,7 @@ func ParseToken(tokenString string) (jwt.MapClaims, error) {
 	return claims, nil
 }
 
-func newContext(ctx context.Context, key *contextKey, claims jwt.MapClaims) (context.Context, error) {
+func newContext(ctx context.Context, key *ContextKey, claims jwt.MapClaims) (context.Context, error) {
 	sub := claims["sub"]
 
 	if sub == "" {
@@ -312,7 +312,7 @@ func newContext(ctx context.Context, key *contextKey, claims jwt.MapClaims) (con
 }
 
 // GetAuthContext returns decoded jwt data
-func GetAuthContext(ctx context.Context, key *contextKey) (AuthContext, error) {
+func GetAuthContext(ctx context.Context, key *ContextKey) (AuthContext, error) {
 	claims, ok := ctx.Value(key).(jwt.MapClaims)
 
 	if !ok {
