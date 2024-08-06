@@ -6,7 +6,7 @@ import (
 )
 
 func TestNewDatabase(t *testing.T) {
-	db := testdb.NewDatabase(t)
+	db := testdb.NewTestDatabase(t)
 	defer db.Close(t)
 	connStr := db.ConnectionString(t)
 	println(connStr)
