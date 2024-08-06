@@ -30,7 +30,7 @@ type Address struct {
 	ID               string          `json:"id"`
 	Street           string          `json:"street"`
 	City             string          `json:"city"`
-	Region           sql.NullString  `json:"region"`
+	Region           string          `json:"region"`
 	Country          string          `json:"country"`
 	CountryCode      string          `json:"country_code"`
 	FormattedAddress sql.NullString  `json:"formatted_address"`
@@ -39,7 +39,7 @@ type Address struct {
 	Latitude         sql.NullFloat64 `json:"latitude"`
 	Longitude        sql.NullFloat64 `json:"longitude"`
 	Msisdn           sql.NullString  `json:"msisdn"`
-	IsDefault        sql.NullBool    `json:"is_default"`
+	IsDefault        bool            `json:"is_default"`
 	UserID           sql.NullString  `json:"user_id"`
 	CompanyID        sql.NullString  `json:"company_id"`
 	CreatedAt        time.Time       `json:"created_at"`
@@ -62,6 +62,8 @@ type Company struct {
 	IsActive       bool           `json:"is_active"`
 	CurrencyCode   string         `json:"currency_code"`
 	InvitationCode sql.NullString `json:"invitation_code"`
+	HasOnboarded   bool           `json:"has_onboarded"`
+	IsDeleted      bool           `json:"is_deleted"`
 	CreatedAt      time.Time      `json:"created_at"`
 	UpdatedAt      time.Time      `json:"updated_at"`
 }
@@ -92,13 +94,15 @@ type Member struct {
 
 type PaymentAccount struct {
 	ID            string    `json:"id"`
-	AccountType   string    `json:"account_type"`
+	BankType      string    `json:"bank_type"`
 	AccountNumber string    `json:"account_number"`
 	FirstName     string    `json:"first_name"`
 	LastName      string    `json:"last_name"`
 	BankName      string    `json:"bank_name"`
 	BankCode      string    `json:"bank_code"`
-	BankBranch    string    `json:"bank_branch"`
+	IsDeleted     bool      `json:"is_deleted"`
+	BankID        string    `json:"bank_id"`
+	BankCurrency  string    `json:"bank_currency"`
 	CompanyID     string    `json:"company_id"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`

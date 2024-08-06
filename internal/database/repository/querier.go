@@ -10,6 +10,7 @@ import (
 )
 
 type Querier interface {
+	AddAddress(ctx context.Context, arg AddAddressParams) (Address, error)
 	AddMember(ctx context.Context, arg AddMemberParams) (Member, error)
 	// WORKING HOURS
 	AddWorkingHour(ctx context.Context, arg AddWorkingHourParams) (WorkingHour, error)

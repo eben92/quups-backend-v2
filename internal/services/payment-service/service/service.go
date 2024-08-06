@@ -4,6 +4,7 @@ import (
 	"context"
 	"quups-backend/internal/database"
 	paymentdto "quups-backend/internal/services/payment-service/dto"
+	"quups-backend/internal/services/payment-service/models"
 )
 
 type service struct {
@@ -14,7 +15,9 @@ type service struct {
 // PaymentService provides methods for interacting with payment services.
 type PaymentService interface {
 	// GetBankList returns a list of supported banks.
-	GetBankList() ([]paymentdto.Bank, error)
+	GetBankList(bankType models.BankType) ([]paymentdto.Bank, error)
+	SetupAccount(bankType paymentdto.ReqPaymentDTO) error
+	ResolveBankAccount(bankCode, accountNumber string) (paymentdto.ResolvedAccount, error)
 }
 
 // Payment service

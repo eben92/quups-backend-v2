@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS companies (
     is_active BOOLEAN NOT NULL DEFAULT false,
     currency_code VARCHAR(5) NOT NULL DEFAULT 'GHS',
     invitation_code VARCHAR(10),
+    has_onboarded BOOLEAN NOT NULL DEFAULT false,
+    is_deleted BOOLEAN NOT NULL DEFAULT false,
 
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -27,6 +29,10 @@ CREATE INDEX ON "companies" ("invitation_code");
 ALTER TABLE "companies"
     ADD FOREIGN KEY ("owner_id")
     REFERENCES "users" ("id");
+
+ALTER TABLE "addresses"
+    ADD FOREIGN KEY ("company_id") 
+    REFERENCES "companies" ("id");
 
 CREATE TABLE IF NOT EXISTS members (
     id  VARCHAR(150) PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -99,13 +105,15 @@ ALTER TABLE "working_hours"
 
 CREATE TABLE IF NOT EXISTS payment_accounts (
     id  VARCHAR(150) PRIMARY KEY DEFAULT gen_random_uuid(),
-    account_type VARCHAR(50) NOT NULL DEFAULT 'mobile_money',
+    bank_type VARCHAR(50) NOT NULL DEFAULT 'mobile_money',
     account_number VARCHAR(50) NOT NULL,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
     bank_name VARCHAR(100) NOT NULL,
     bank_code VARCHAR(50) NOT NULL,
-    bank_branch VARCHAR(100) NOT NULL,
+    is_deleted BOOLEAN NOT NULL DEFAULT false,
+    bank_id VARCHAR(50) NOT NULL,
+    bank_currency VARCHAR(5) NOT NULL DEFAULT 'GHS',
 
     company_id VARCHAR(21) NOT NULL,
 
@@ -113,7 +121,7 @@ CREATE TABLE IF NOT EXISTS payment_accounts (
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX ON "payment_accounts" ("company_id", "account_number");
+CREATE UNIQUE INDEX ON "payment_accounts" ("company_id", "account_number");
 
 ALTER TABLE "payment_accounts"
     ADD FOREIGN KEY ("company_id")
@@ -188,5 +196,6 @@ DROP TABLE working_hours;
 DROP TABLE payout_accounts;
 DROP TABLE payment_account_details;
 DROP TABLE payment_accounts;
+ALTER TABLE addresses DROP CONSTRAINT addresses_company_id_fkey;
 DROP TABLE companies;
 -- +goose StatementEnd

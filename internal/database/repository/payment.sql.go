@@ -14,51 +14,56 @@ const createPaymentAccount = `-- name: CreatePaymentAccount :one
 INSERT INTO payment_accounts (
         company_id,
         account_number,
-        account_type,
+        bank_type,
         first_name,
         last_name,
-        bank_branch,
         bank_code,
-        bank_name
+        bank_name,
+        bank_id,
+        bank_currency
     )
 VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
     )
-RETURNING id, account_type, account_number, first_name, last_name, bank_name, bank_code, bank_branch, company_id, created_at, updated_at
+RETURNING id, bank_type, account_number, first_name, last_name, bank_name, bank_code, is_deleted, bank_id, bank_currency, company_id, created_at, updated_at
 `
 
 type CreatePaymentAccountParams struct {
 	CompanyID     string `json:"company_id"`
 	AccountNumber string `json:"account_number"`
-	AccountType   string `json:"account_type"`
+	BankType      string `json:"bank_type"`
 	FirstName     string `json:"first_name"`
 	LastName      string `json:"last_name"`
-	BankBranch    string `json:"bank_branch"`
 	BankCode      string `json:"bank_code"`
 	BankName      string `json:"bank_name"`
+	BankID        string `json:"bank_id"`
+	BankCurrency  string `json:"bank_currency"`
 }
 
 func (q *Queries) CreatePaymentAccount(ctx context.Context, arg CreatePaymentAccountParams) (PaymentAccount, error) {
 	row := q.db.QueryRowContext(ctx, createPaymentAccount,
 		arg.CompanyID,
 		arg.AccountNumber,
-		arg.AccountType,
+		arg.BankType,
 		arg.FirstName,
 		arg.LastName,
-		arg.BankBranch,
 		arg.BankCode,
 		arg.BankName,
+		arg.BankID,
+		arg.BankCurrency,
 	)
 	var i PaymentAccount
 	err := row.Scan(
 		&i.ID,
-		&i.AccountType,
+		&i.BankType,
 		&i.AccountNumber,
 		&i.FirstName,
 		&i.LastName,
 		&i.BankName,
 		&i.BankCode,
-		&i.BankBranch,
+		&i.IsDeleted,
+		&i.BankID,
+		&i.BankCurrency,
 		&i.CompanyID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -227,7 +232,7 @@ func (q *Queries) CreatePayoutAccount(ctx context.Context, arg CreatePayoutAccou
 }
 
 const getPaymentAccountByCompanyID = `-- name: GetPaymentAccountByCompanyID :one
-SELECT id, account_type, account_number, first_name, last_name, bank_name, bank_code, bank_branch, company_id, created_at, updated_at FROM payment_accounts
+SELECT id, bank_type, account_number, first_name, last_name, bank_name, bank_code, is_deleted, bank_id, bank_currency, company_id, created_at, updated_at FROM payment_accounts
  WHERE company_id = $1
  LIMIT 1
 `
@@ -237,13 +242,15 @@ func (q *Queries) GetPaymentAccountByCompanyID(ctx context.Context, companyID st
 	var i PaymentAccount
 	err := row.Scan(
 		&i.ID,
-		&i.AccountType,
+		&i.BankType,
 		&i.AccountNumber,
 		&i.FirstName,
 		&i.LastName,
 		&i.BankName,
 		&i.BankCode,
-		&i.BankBranch,
+		&i.IsDeleted,
+		&i.BankID,
+		&i.BankCurrency,
 		&i.CompanyID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -315,48 +322,53 @@ func (q *Queries) GetPayoutAccountByPaymentAccountID(ctx context.Context, paymen
 const updatePaymentAccountByCompanyID = `-- name: UpdatePaymentAccountByCompanyID :one
 UPDATE payment_accounts SET 
         account_number = $2,
-        account_type = $3,
+        bank_type = $3,
         first_name = $4,
         last_name = $5,
-        bank_branch = $6,
-        bank_code = $7,
-        bank_name = $8
+        bank_code = $6,
+        bank_name = $7,
+        bank_id = $8,
+        bank_currency = $9
     WHERE company_id = $1
-RETURNING id, account_type, account_number, first_name, last_name, bank_name, bank_code, bank_branch, company_id, created_at, updated_at
+RETURNING id, bank_type, account_number, first_name, last_name, bank_name, bank_code, is_deleted, bank_id, bank_currency, company_id, created_at, updated_at
 `
 
 type UpdatePaymentAccountByCompanyIDParams struct {
 	CompanyID     string `json:"company_id"`
 	AccountNumber string `json:"account_number"`
-	AccountType   string `json:"account_type"`
+	BankType      string `json:"bank_type"`
 	FirstName     string `json:"first_name"`
 	LastName      string `json:"last_name"`
-	BankBranch    string `json:"bank_branch"`
 	BankCode      string `json:"bank_code"`
 	BankName      string `json:"bank_name"`
+	BankID        string `json:"bank_id"`
+	BankCurrency  string `json:"bank_currency"`
 }
 
 func (q *Queries) UpdatePaymentAccountByCompanyID(ctx context.Context, arg UpdatePaymentAccountByCompanyIDParams) (PaymentAccount, error) {
 	row := q.db.QueryRowContext(ctx, updatePaymentAccountByCompanyID,
 		arg.CompanyID,
 		arg.AccountNumber,
-		arg.AccountType,
+		arg.BankType,
 		arg.FirstName,
 		arg.LastName,
-		arg.BankBranch,
 		arg.BankCode,
 		arg.BankName,
+		arg.BankID,
+		arg.BankCurrency,
 	)
 	var i PaymentAccount
 	err := row.Scan(
 		&i.ID,
-		&i.AccountType,
+		&i.BankType,
 		&i.AccountNumber,
 		&i.FirstName,
 		&i.LastName,
 		&i.BankName,
 		&i.BankCode,
-		&i.BankBranch,
+		&i.IsDeleted,
+		&i.BankID,
+		&i.BankCurrency,
 		&i.CompanyID,
 		&i.CreatedAt,
 		&i.UpdatedAt,

@@ -47,13 +47,13 @@ func (s *service) Signin(body authdto.SignInRequestDTO) (authdto.ResponseUserDTO
 }
 
 // AccountSignin handles the user account sign-in process and returns the response user DTO and an error, if any.
-func (s *service) AccountSignin(body authdto.AccountSigninDTO) (userdto.UserTeamDTO, error) {
+func (s *service) AccountSignin(body authdto.AccountSigninDTO) (userdto.TeamMemberDTO, error) {
 
-	authuser, err := local_jwt.GetAuthContext(s.ctx)
+	authuser, err := local_jwt.GetAuthContext(s.ctx, local_jwt.AUTH_CTX_KEY)
 
 	if err != nil {
 
-		return userdto.UserTeamDTO{}, fmt.Errorf("error getting account. Please try again")
+		return userdto.TeamMemberDTO{}, fmt.Errorf("error getting account. Please try again")
 	}
 
 	uservice := userservice.NewUserService(s.ctx, s.db)
@@ -111,7 +111,7 @@ func (s *service) Signup(body userdto.CreateUserParams) (authdto.ResponseUserDTO
 // SoftSignout handles the user sign-out process and returns a string and an error, if any.
 // It generates a new jwt token for the user.
 func (s *service) SoftSignout() (string, error) {
-	user, err := local_jwt.GetAuthContext(s.ctx)
+	user, err := local_jwt.GetAuthContext(s.ctx, local_jwt.AUTH_CTX_KEY)
 
 	if err != nil {
 

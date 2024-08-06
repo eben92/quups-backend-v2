@@ -34,7 +34,7 @@ func (s *Server) RegisterRoutes() http.Handler {
 	v1.Route("/auth", s.authController)
 	// protected routes
 	v1.Group(func(pr chi.Router) {
-		pr.Use(local_jwt.Authenticator())
+		pr.Use(local_jwt.UserMiddleware())
 		pr.Route("/user", s.userController)
 		pr.Route("/companies", s.companyController)
 		pr.Route("/payments", s.paymentController)
@@ -51,7 +51,6 @@ func (s *Server) authController(r chi.Router) {
 
 	r.Post("/signin", handler.Signin)
 	r.Post("/signup", handler.Signup)
-	r.Post("/signout", handler.Signout)
 }
 
 func (s *Server) companyController(r chi.Router) {
@@ -69,14 +68,24 @@ func (s *Server) paymentController(r chi.Router) {
 	handler := paymentcontroller.NewPaymentController(s.db)
 
 	r.Get("/supported-banks", handler.GetBankList)
+	r.Get("/resolve-account", handler.ResolveBankAccount)
+	r.Post("/setup", handler.SetupCompanyAccount)
 }
 
 func (s *Server) userController(r chi.Router) {
 	handler := usercontroller.NewUserController(s.db)
 	authhandler := authcontroller.New(s.db)
 
-	r.Get("/teams", handler.GetUserTeams)
+	r.Get("/companies", handler.GetUserCompanies)
+	r.Get("/companies/{id}", authhandler.GetUserCompany)
 	r.Post("/account", authhandler.AccountSignin)
+
+	// user-company activity routes
+	r.Group(func(r chi.Router) {
+		r.Use(local_jwt.CompanyMiddleware())
+	})
+
+	r.Post("/signout", authhandler.Signout)
 }
 
 func (s *Server) HelloWorldHandler(w http.ResponseWriter, r *http.Request) {

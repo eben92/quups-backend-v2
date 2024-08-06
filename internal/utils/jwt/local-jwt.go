@@ -14,13 +14,17 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+type COOKIE_NAME string
+
 const (
-	COOKIE_NAME string = "qp-session"
+	COOKIE_NAME_USER    COOKIE_NAME = "qp-session"
+	COOKIE_NAME_COMPANY COOKIE_NAME = "qp-client"
 )
 
 var (
-	JWT_SECRET   = os.Getenv("JWT_SECRET")
-	AUTH_CTX_KEY = &contextKey{"authcontext"}
+	JWT_SECRET      = os.Getenv("JWT_SECRET")
+	AUTH_CTX_KEY    = &ContextKey{"authcontext"}
+	COMPANY_CTX_KEY = &ContextKey{"companycontext"}
 )
 
 type AuthContext struct {
@@ -41,8 +45,13 @@ type AuthContext struct {
 	CompanyID string
 }
 
-type contextKey struct {
+type ContextKey struct {
 	name string
+}
+
+type tokenMgt struct {
+	UserToken    string
+	CompanyToken string
 }
 
 var (
@@ -54,28 +63,27 @@ var (
 	ErrAlgoInvalid  = errors.New("algorithm mismatch")
 )
 
-// Authenticator is a middleware that handles jwt authentications
-func Authenticator() func(http.Handler) http.Handler {
+// UserMiddleware is a middleware that handles user jwt authentications
+func UserMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		hfn := func(w http.ResponseWriter, r *http.Request) {
-			var token string
+			var token tokenMgt
 
-			findtokens := []func(*http.Request) string{GetTokenFromHeader, GetTokenFromCookie}
+			findtokens := []func(*http.Request) tokenMgt{GetTokenFromHeader, GetTokenFromCookie}
 
 			w.Header().Set("Content-Type", "application/json")
 
 			for _, fn := range findtokens {
 				token = fn(r)
 
-				if token != "" {
+				if token.UserToken != "" {
 					break
 				}
 
 			}
 
-			if token == "" {
+			if token.UserToken == "" {
 
-				// http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 				response := apiutils.New(w, r)
 
 				response.WrapInApiResponse(&apiutils.ApiResponseParams{
@@ -88,11 +96,8 @@ func Authenticator() func(http.Handler) http.Handler {
 
 			}
 
-			c, err := ParseToken(token)
+			c, err := ParseToken(token.UserToken)
 			if err != nil {
-
-				// http.Error(w, err.Error(), http.StatusUnauthorized)
-
 				response := apiutils.New(w, r)
 
 				response.WrapInApiResponse(&apiutils.ApiResponseParams{
@@ -104,7 +109,7 @@ func Authenticator() func(http.Handler) http.Handler {
 				return
 			}
 
-			ctx, err := newContext(r.Context(), c)
+			ctx, err := newContext(r.Context(), AUTH_CTX_KEY, c)
 			if err != nil {
 
 				// http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -128,26 +133,117 @@ func Authenticator() func(http.Handler) http.Handler {
 	}
 }
 
-func GetTokenFromHeader(r *http.Request) string {
+// CompanyMiddleware is a middleware that handles company jwt authentications
+func CompanyMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		hfn := func(w http.ResponseWriter, r *http.Request) {
+			var token tokenMgt
+
+			findtokens := []func(*http.Request) tokenMgt{GetTokenFromHeader, GetTokenFromCookie}
+
+			for _, fn := range findtokens {
+				token = fn(r)
+
+				if token.CompanyToken != "" {
+					break
+				}
+
+			}
+
+			if token.CompanyToken == "" {
+
+				response := apiutils.New(w, r)
+
+				response.WrapInApiResponse(&apiutils.ApiResponseParams{
+					StatusCode: http.StatusUnauthorized,
+					Message:    http.StatusText(http.StatusUnauthorized),
+					Results:    nil,
+				})
+
+				return
+
+			}
+
+			c, err := ParseToken(token.CompanyToken)
+			if err != nil {
+				response := apiutils.New(w, r)
+
+				response.WrapInApiResponse(&apiutils.ApiResponseParams{
+					StatusCode: http.StatusUnauthorized,
+					Message:    err.Error(),
+					Results:    nil,
+				})
+
+				return
+			}
+
+			ctx, err := newContext(r.Context(), COMPANY_CTX_KEY, c)
+			if err != nil {
+
+				response := apiutils.New(w, r)
+
+				response.WrapInApiResponse(&apiutils.ApiResponseParams{
+					StatusCode: http.StatusUnauthorized,
+					Message:    err.Error(),
+					Results:    nil,
+				})
+
+				return
+
+			}
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		}
+
+		return http.HandlerFunc(hfn)
+	}
+}
+
+func GetTokenFromHeader(r *http.Request) tokenMgt {
 	bearer := r.Header.Get("Authorization")
+	t := tokenMgt{}
 
 	if len(bearer) > 7 && strings.ToUpper(bearer[0:6]) == "BEARER" {
 		slog.Info("got token from request head")
-		return bearer[7:]
+
+		companyToken := r.Header.Get(string(COOKIE_NAME_COMPANY))
+
+		if companyToken != "" {
+			slog.Warn("company token found in header")
+		}
+
+		return tokenMgt{bearer[7:], companyToken}
+
 	}
 
-	return ""
+	return t
 }
 
-func GetTokenFromCookie(r *http.Request) string {
-	cookie, err := r.Cookie(COOKIE_NAME)
+func GetTokenFromCookie(r *http.Request) tokenMgt {
+	t := tokenMgt{}
+	userCookie, err := r.Cookie(string(COOKIE_NAME_USER))
+
 	if err != nil {
-		return ""
+		return t
 	}
 
-	slog.Info("token found in cookie")
+	t.UserToken = userCookie.Value
 
-	return cookie.Value
+	companyCookie, err := r.Cookie(string(COOKIE_NAME_COMPANY))
+
+	if err != nil {
+
+		slog.Warn("no company cookie found")
+
+		return t
+
+	}
+
+	t.CompanyToken = companyCookie.Value
+
+	slog.Info("user and company token found in cookie")
+
+	return t
 }
 
 /*
@@ -171,7 +267,7 @@ func GenereteJWT(data AuthContext) ([]byte, error) {
 	if err != nil {
 		slog.Error("Error signing jwt", "Error", err)
 
-		return nil, fmt.Errorf("Something went wrong. Please try again. #2")
+		return nil, fmt.Errorf("something went wrong. Please try again. #2")
 	}
 
 	return []byte(tokenString), nil
@@ -204,20 +300,20 @@ func ParseToken(tokenString string) (jwt.MapClaims, error) {
 	return claims, nil
 }
 
-func newContext(ctx context.Context, claims jwt.MapClaims) (context.Context, error) {
+func newContext(ctx context.Context, key *ContextKey, claims jwt.MapClaims) (context.Context, error) {
 	sub := claims["sub"]
 
 	if sub == "" {
 		return nil, ErrUnauthorized
 	}
 
-	ctx = context.WithValue(ctx, AUTH_CTX_KEY, claims)
+	ctx = context.WithValue(ctx, key, claims)
 	return ctx, nil
 }
 
 // GetAuthContext returns decoded jwt data
-func GetAuthContext(ctx context.Context) (AuthContext, error) {
-	claims, ok := ctx.Value(AUTH_CTX_KEY).(jwt.MapClaims)
+func GetAuthContext(ctx context.Context, key *ContextKey) (AuthContext, error) {
+	claims, ok := ctx.Value(key).(jwt.MapClaims)
 
 	if !ok {
 		slog.Error("GetAuthContext - no claims found", "Error", ErrNoTokenFound)

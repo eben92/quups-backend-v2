@@ -37,22 +37,24 @@ type CompanyInternalDTO struct {
 	IsActive       bool      `json:"is_active"`
 	CurrencyCode   string    `json:"currency_code,omitempty"`
 	InvitationCode string    `json:"invitation_code,omitempty"`
+	HasOnboarded   bool      `json:"has_onboarded"`
 	CreatedAt      time.Time `json:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at"`
 }
 
 type TeamCompanyDTO struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	Msisdn    string `json:"msisdn"`
-	BannerUrl string `json:"banner_url"`
-	ImageUrl  string `json:"image_url"`
-	IsActive  bool   `json:"is_active"`
-	Slug      string `json:"slug"`
+	ID           string `json:"id"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Msisdn       string `json:"msisdn"`
+	BannerUrl    string `json:"banner_url"`
+	ImageUrl     string `json:"image_url"`
+	IsActive     bool   `json:"is_active"`
+	Slug         string `json:"slug"`
+	HasOnboarded bool   `json:"has_onboarded"`
 }
 
-type UserTeamDTO struct {
+type TeamMemberDTO struct {
 	Company     TeamCompanyDTO `json:"company"`
 	ID          string         `json:"id"`
 	Role        string         `json:"role"`

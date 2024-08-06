@@ -7,7 +7,7 @@ import (
 	apiutils "quups-backend/internal/utils/api"
 )
 
-func (c *controller) GetUserTeams(w http.ResponseWriter, r *http.Request) {
+func (c *controller) GetUserCompanies(w http.ResponseWriter, r *http.Request) {
 	response := apiutils.New(w, r)
 	usrv := userservice.NewUserService(r.Context(), c.db)
 

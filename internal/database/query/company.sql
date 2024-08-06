@@ -29,7 +29,8 @@ UPDATE companies SET
         about = $5,
         tin = $6,
         is_active = $7,
-        msisdn = $8
+        msisdn = $8,
+        has_onboarded = $9
     WHERE id = $1
 RETURNING *;
 
@@ -53,3 +54,25 @@ SELECT *
 -- name: DeleteCompany :exec
 DELETE FROM companies WHERE id = $1;
 
+
+-- name: AddAddress :one
+INSERT INTO addresses (
+        company_id,
+        user_id,
+        msisdn,
+        is_default,
+        latitude,
+        longitude,
+        description,
+        formatted_address,
+        country_code,
+        region,
+        street,
+        city,
+        country,
+        postal_code
+    )
+VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+    )
+RETURNING *;

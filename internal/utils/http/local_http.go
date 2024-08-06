@@ -1,12 +1,13 @@
 package local_http
 
 import (
+	"context"
 	"io"
 	"net/http"
 )
 
 type Options struct {
-	Method  *string
+	Method  string
 	Body    io.Reader
 	Headers *[][2]string
 }
@@ -36,16 +37,54 @@ func Fetch(url string, options *Options) (*http.Response, error) {
 		options = &Options{}
 	}
 
-	if options.Method == nil {
-		GET := http.MethodGet
-		options.Method = &GET
+	if options.Method == "" {
+		options.Method = http.MethodGet
 	}
 
 	if options.Headers == nil {
 		options.Headers = &[][2]string{}
 	}
 
-	req, err := http.NewRequest(*options.Method, url, options.Body)
+	req, err := http.NewRequest(options.Method, url, options.Body)
+
+	headers := *options.Headers
+
+	if len(headers) > 0 {
+		for _, value := range headers {
+			req.Header.Set(value[0], value[1])
+
+		}
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := client.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}
+
+func FetchWithContext(ctx context.Context, url string, options *Options) (*http.Response, error) {
+	client := &http.Client{}
+
+	if options == nil {
+		options = &Options{}
+	}
+
+	if options.Method == "" {
+		options.Method = http.MethodGet
+	}
+
+	if options.Headers == nil {
+		options.Headers = &[][2]string{}
+	}
+
+	req, err := http.NewRequestWithContext(ctx, options.Method, url, options.Body)
 
 	headers := *options.Headers
 

@@ -22,25 +22,25 @@ func ValidateCreateCompanyQParams(body userdto.CreateCompanyParams) error {
 	}
 
 	if !utils.IsVaildEmail(body.Email) {
-		return invalidEmailErr
+		return errInvalidEmail
 	}
 
 	_, isvalid := utils.IsValidCompanyName(body.Name)
 
 	if !isvalid {
-		return invalidNameErr
+		return errInvalidName
 	}
 
 	_, validmsisdn := utils.ParseMsisdn(body.Msisdn)
 	if !validmsisdn {
-		return invalidMsisdnErr
+		return errInvalidMsisdn
 	}
 
 	return nil
 }
 
 func (s *service) createCompanyParams(body userdto.CreateCompanyParams) (model.CreateCompanyParams, error) {
-	auth_user, err := local_jwt.GetAuthContext(s.ctx)
+	auth_user, err := local_jwt.GetAuthContext(s.ctx, local_jwt.AUTH_CTX_KEY)
 
 	if err != nil {
 		slog.Error("error fetching user", "Error", err)
@@ -76,7 +76,7 @@ func (s *service) createCompanyParams(body userdto.CreateCompanyParams) (model.C
 	if body.BrandType != "" && slices.Contains(BRAND_TYPES, body.BrandType) {
 		p.BrandType = body.BrandType
 	} else {
-		return p, invalidBrandTypeErr
+		return p, errInvalidBrandType
 	}
 
 	// TODO: check invitationCode
@@ -265,6 +265,30 @@ func (s *service) GetCompanyByID(id string) (userdto.CompanyInternalDTO, error) 
 	return result, nil
 }
 
+func (s *service) GetUserCompany() (userdto.CompanyInternalDTO, error) {
+	companyCTX, err := local_jwt.GetAuthContext(s.ctx, local_jwt.COMPANY_CTX_KEY)
+
+	if err != nil {
+		slog.Error("error fetching company context", "Error", err)
+
+		return userdto.CompanyInternalDTO{}, errors.New("error fetching company context")
+	}
+
+	repo := s.db.NewRepository()
+	data, err := repo.GetCompanyByID(s.ctx, companyCTX.CompanyID)
+
+	result := userdto.CompanyInternalDTO{}
+
+	if err != nil {
+		slog.Error("error fetching company with id:", "Error", err)
+		return result, fmt.Errorf("company with id [%s] not found", companyCTX.CompanyID)
+	}
+
+	result = mapToCompanyInternalDTO(data)
+
+	return result, nil
+}
+
 func mapToCompanyInternalDTO(c model.Company) userdto.CompanyInternalDTO {
 	dto := userdto.CompanyInternalDTO{
 		ID:             c.ID,
@@ -282,6 +306,7 @@ func mapToCompanyInternalDTO(c model.Company) userdto.CompanyInternalDTO {
 		Slug:           c.Slug,
 		TotalSales:     c.TotalSales,
 		IsActive:       c.IsActive,
+		HasOnboarded:   c.HasOnboarded,
 		CreatedAt:      c.CreatedAt,
 		UpdatedAt:      c.UpdatedAt,
 	}

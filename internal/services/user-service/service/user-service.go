@@ -50,17 +50,17 @@ func ValidateCreateUserQ(body userdto.CreateUserParams) error {
 	}
 
 	if len(strings.TrimSpace(body.Name)) < 3 {
-		return fmt.Errorf("full name must be at least 5 characters.")
+		return fmt.Errorf("full name must be at least 5 characters")
 	}
 
 	if !utils.IsVaildEmail(body.Email) {
-		return invalidEmailErr
+		return errInvalidEmail
 	}
 
 	_, isValidMsisdn := utils.ParseMsisdn(body.Msisdn)
 
 	if !isValidMsisdn {
-		return invalidMsisdnErr
+		return errInvalidMsisdn
 	}
 
 	if len(body.Password) < 4 {
@@ -88,17 +88,11 @@ func (s *service) prepareUserParams(body userdto.CreateUserParams) (model.Create
 		},
 	}
 
-	u, err := s.FindByEmail(p.Email)
-
-	if err != nil {
-		slog.Error("createUserParams - FindByEmail", "Error", err)
-
-		return p, fmt.Errorf("error creating account. Please try again")
-	}
+	u, _ := s.FindByEmail(p.Email)
 
 	if u.ID != "" {
 		slog.Error("User with email  already exist", "Error", body.Email)
-		return p, fmt.Errorf("User with email [%s] already exist", body.Email)
+		return p, fmt.Errorf("user with email [%s] already exist", body.Email)
 	}
 
 	if body.Gender != "" {
@@ -106,23 +100,24 @@ func (s *service) prepareUserParams(body userdto.CreateUserParams) (model.Create
 		p.Gender.Valid = true
 	}
 
-	msidsn, _ := utils.ParseMsisdn(body.Msisdn)
+	msidsn, ok := utils.ParseMsisdn(body.Msisdn)
 
-	u, err = s.FindByMsisdn(msidsn)
+	if !ok {
+		slog.Error("createUserParams - ParseMsisdn", "Error", body.Msisdn)
 
-	if err != nil {
-		slog.Error("createUserParams - FindByMsisdn", "Error", err)
-		return p, fmt.Errorf("error creating account please try again")
+		return p, fmt.Errorf("invalid phone number")
 	}
+
+	u, _ = s.FindByMsisdn(msidsn)
 
 	if u.ID != "" {
 		slog.Error("User with msisdn [%s] already exist", "Error", body.Msisdn)
-		return p, fmt.Errorf("Phone number [%s] already in use", body.Msisdn)
+		return p, fmt.Errorf("phone number [%s] already in use", body.Msisdn)
 	}
 
 	hashpass, err := bcrypt.GenerateFromPassword([]byte(body.Password), 10)
 	if err != nil {
-		return p, fmt.Errorf("Something went wrong. Please try again. #1")
+		return p, fmt.Errorf("something went wrong. Please try again. #1")
 	}
 
 	p.Password.String = string(hashpass)
@@ -140,7 +135,7 @@ func (s *service) Create(body userdto.CreateUserParams) (userdto.UserInternalDTO
 	if err != nil {
 		slog.Error("failed to create user", "Error", err)
 
-		return result, err
+		return result, fmt.Errorf("failed to create user. Please try again later")
 	}
 
 	repo := s.db.NewRepository()
@@ -197,7 +192,7 @@ func (s *service) FindByEmail(email string) (userdto.UserInternalDTO, error) {
 func (s *service) FindByID() (userdto.UserInternalDTO, error) {
 
 	result := userdto.UserInternalDTO{}
-	authuser, err := local_jwt.GetAuthContext(s.ctx)
+	authuser, err := local_jwt.GetAuthContext(s.ctx, local_jwt.AUTH_CTX_KEY)
 
 	if err != nil {
 		slog.Error("FindByID", "Error", err)
@@ -254,7 +249,7 @@ func (s *service) FindByMsisdn(msisdn utils.Msisdn) (userdto.UserInternalDTO, er
 	if u.ID == "" {
 		slog.Error("user does not exist:", "Error", "no user found")
 
-		return result, fmt.Errorf("no user found.")
+		return result, fmt.Errorf("no user found")
 	}
 
 	result = mapToUserInternalDTO(u)
@@ -265,9 +260,9 @@ func (s *service) FindByMsisdn(msisdn utils.Msisdn) (userdto.UserInternalDTO, er
 
 // GetUserTeams retrieves the teams associated with the user.
 // It returns a slice of userdto.UserTeamDTO and an error if any.
-func (s *service) GetUserTeams() ([]userdto.UserTeamDTO, error) {
+func (s *service) GetUserTeams() ([]userdto.TeamMemberDTO, error) {
 
-	authuser, err := local_jwt.GetAuthContext(s.ctx)
+	authuser, err := local_jwt.GetAuthContext(s.ctx, local_jwt.AUTH_CTX_KEY)
 	slog.Info("getting user teams", "user:", authuser.Sub)
 
 	if err != nil {
@@ -279,7 +274,7 @@ func (s *service) GetUserTeams() ([]userdto.UserTeamDTO, error) {
 
 	repo := s.db.NewRepository()
 
-	results := []userdto.UserTeamDTO{}
+	results := []userdto.TeamMemberDTO{}
 	t, err := repo.GetUserTeams(s.ctx, sql.NullString{
 		String: authuser.Sub,
 		Valid:  true,
@@ -302,15 +297,15 @@ func (s *service) GetUserTeams() ([]userdto.UserTeamDTO, error) {
 	return results, nil
 }
 
-func (s *service) GetUserTeam(companyid string) (userdto.UserTeamDTO, error) {
-	results := userdto.UserTeamDTO{}
-	authuser, err := local_jwt.GetAuthContext(s.ctx)
-	slog.Info("getting user team", "user:", authuser.Name)
+func (s *service) GetUserTeam(companyid string) (userdto.TeamMemberDTO, error) {
+	results := userdto.TeamMemberDTO{}
+	authuser, err := local_jwt.GetAuthContext(s.ctx, local_jwt.AUTH_CTX_KEY)
+	slog.Info("getting user company", "user", authuser.Name)
 
 	if err != nil {
 		slog.Error("GetUserTeam", "Error", err)
 
-		return results, errors.New("no data found")
+		return results, errors.New("internal server error")
 
 	}
 
@@ -327,12 +322,12 @@ func (s *service) GetUserTeam(companyid string) (userdto.UserTeamDTO, error) {
 	if err != nil {
 		slog.Error("error fetching user team err: ", "Error", err)
 
-		return results, errors.New("could not find user team")
+		return results, errors.New("could not find user company")
 	}
 
 	results = mapToUserTeamInternalDTO(t)
 
-	slog.Info("user team retrieved successfully")
+	slog.Info("user company retrieved successfully")
 
 	return results, nil
 }
@@ -391,88 +386,61 @@ func (s *service) Delete(id string) {
 
 func mapToUserInternalDTO(user model.User) userdto.UserInternalDTO {
 	dto := userdto.UserInternalDTO{
-		ID:    user.ID,
-		Email: user.Email,
-	}
-
-	if user.Name.Valid {
-		dto.Name = user.Name.String
-	}
-
-	if user.Msisdn.Valid {
-		dto.Msisdn = user.Msisdn.String
-	}
-
-	if user.ImageUrl.Valid {
-		dto.ImageUrl = user.ImageUrl.String
-	}
-
-	if user.Gender.Valid {
-		dto.Gender = user.Gender.String
-	}
-
-	if user.Password.Valid {
-		dto.Password = user.Password.String
+		ID:       user.ID,
+		Email:    user.Email,
+		Name:     user.Name.String,
+		Msisdn:   user.Msisdn.String,
+		ImageUrl: user.ImageUrl.String,
+		Gender:   user.Gender.String,
+		Password: user.Password.String,
 	}
 
 	return dto
 }
 
-func mapToUserTeamInternalDTO(t model.GetUserTeamRow) userdto.UserTeamDTO {
-	tm := userdto.UserTeamDTO{
+func mapToUserTeamInternalDTO(t model.GetUserTeamRow) userdto.TeamMemberDTO {
+	tm := userdto.TeamMemberDTO{
 		ID:        t.ID,
 		CompanyID: t.CompanyID,
 		Msisdn:    t.Msisdn,
 		Status:    t.Status,
 		Role:      t.Role,
+		Email:     t.Email.String,
 		Company: userdto.TeamCompanyDTO{
-			ID:    t.CompanyID,
-			Name:  t.CompanyName,
-			Email: t.CompanyEmail,
-			Slug:  t.CompanySlug,
+			ID:           t.CompanyID,
+			Name:         t.CompanyName,
+			Email:        t.CompanyEmail,
+			Slug:         t.CompanySlug,
+			Msisdn:       t.CompanyMsisdn,
+			HasOnboarded: t.CompanyHasOnboarded,
+			IsActive:     t.CompanyIsActive,
+			ImageUrl:     t.CompanyImageUrl.String,
+			BannerUrl:    t.CompanyBannerUrl.String,
 		},
-	}
-
-	if t.Email.Valid {
-		tm.Email = t.Email.String
-	}
-
-	if t.CompanyBannerUrl.Valid {
-		tm.Company.BannerUrl = t.CompanyBannerUrl.String
-	}
-
-	if t.CompanyImageUrl.Valid {
-		tm.Company.ImageUrl = t.CompanyImageUrl.String
 	}
 
 	return tm
 }
 
-func mapToUserTeamsInternalDTO(t model.GetUserTeamsRow) userdto.UserTeamDTO {
-	tm := userdto.UserTeamDTO{
+func mapToUserTeamsInternalDTO(t model.GetUserTeamsRow) userdto.TeamMemberDTO {
+	tm := userdto.TeamMemberDTO{
 		ID:        t.ID,
 		CompanyID: t.CompanyID,
 		Msisdn:    t.Msisdn,
 		Status:    t.Status,
 		Role:      t.Role,
+		Email:     t.Email.String,
 		Company: userdto.TeamCompanyDTO{
-			ID:    t.CompanyID,
-			Name:  t.CompanyName,
-			Email: t.CompanyEmail,
-			Slug:  t.CompanySlug,
+			ID:           t.CompanyID,
+			Name:         t.CompanyName,
+			Email:        t.CompanyEmail,
+			Slug:         t.CompanySlug,
+			Msisdn:       t.CompanyMsisdn,
+			HasOnboarded: t.CompanyHasOnboarded,
+			IsActive:     t.CompanyIsActive,
+			ImageUrl:     t.CompanyImageUrl.String,
+			BannerUrl:    t.CompanyBannerUrl.String,
 		},
-	}
-
-	if t.Email.Valid {
-		tm.Email = t.Email.String
-	}
-
-	if t.CompanyBannerUrl.Valid {
-		tm.Company.BannerUrl = t.CompanyBannerUrl.String
-	}
-
-	if t.CompanyImageUrl.Valid {
-		tm.Company.ImageUrl = t.CompanyImageUrl.String
 	}
 
 	return tm

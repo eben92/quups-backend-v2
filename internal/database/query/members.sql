@@ -27,7 +27,9 @@ SELECT members.*,
     companies.banner_url as company_banner_url,
     companies.image_url as company_image_url,
     companies.about as company_about,
-    companies.is_active as company_is_active
+    companies.is_active as company_is_active,
+    companies.has_onboarded as company_has_onboarded,
+    companies.msisdn as company_msisdn
 FROM members
 JOIN companies ON members.company_id = companies.id
 WHERE members.user_id = sqlc.arg(user_id);
@@ -41,7 +43,9 @@ SELECT members.*,
     companies.banner_url as company_banner_url,
     companies.image_url as company_image_url,
     companies.about as company_about,
-    companies.is_active as company_is_active
+    companies.is_active as company_is_active,
+    companies.has_onboarded as company_has_onboarded,
+    companies.msisdn as company_msisdn
 FROM members
 JOIN companies ON members.company_id = companies.id
 WHERE members.company_id = sqlc.arg(company_id) AND members.user_id = sqlc.arg(user_id);    

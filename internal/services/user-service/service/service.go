@@ -18,12 +18,12 @@ const (
 var BRAND_TYPES = []string{FOOD, FASHION}
 
 var (
-	invalidEmailErr  = errors.New("invalid email address.")
-	invalidMsisdnErr = errors.New("invalid phone number.")
-	invalidNameErr   = errors.New(
-		"name must be greater the 3 characters and excluding any special characters.",
+	errInvalidEmail  = errors.New("invalid email address")
+	errInvalidMsisdn = errors.New("invalid phone number")
+	errInvalidName   = errors.New(
+		"name must be greater the 3 characters and excluding any special characters",
 	)
-	invalidBrandTypeErr = errors.New("invalid brand type. expecting " + FOOD + " or " + FASHION)
+	errInvalidBrandType = errors.New("invalid brand type. expecting " + FOOD + " or " + FASHION)
 )
 
 type service struct {
@@ -34,9 +34,9 @@ type service struct {
 // UserService represents the interface for user-related operations.
 type UserService interface {
 	// GetUserTeams retrieves the teams that a user belongs to.
-	GetUserTeams() ([]userdto.UserTeamDTO, error)
+	GetUserTeams() ([]userdto.TeamMemberDTO, error)
 
-	GetUserTeam(companyid string) (userdto.UserTeamDTO, error)
+	GetUserTeam(companyid string) (userdto.TeamMemberDTO, error)
 
 	// CreateUserTeam creates a new user team for a given company.
 	CreateUserTeam(companyId string) (repository.Member, error)
@@ -76,6 +76,9 @@ type CompanyService interface {
 
 	// GetCompanyByID retrieves a company by its ID and returns the company's internal DTO.
 	GetCompanyByID(id string) (userdto.CompanyInternalDTO, error)
+
+	// GetUserCompany retrieves a company by its ID via context and returns the company's internal DTO.
+	GetUserCompany() (userdto.CompanyInternalDTO, error)
 }
 
 // CompanyService method

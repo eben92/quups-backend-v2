@@ -2,27 +2,29 @@
 INSERT INTO payment_accounts (
         company_id,
         account_number,
-        account_type,
+        bank_type,
         first_name,
         last_name,
-        bank_branch,
         bank_code,
-        bank_name
+        bank_name,
+        bank_id,
+        bank_currency
     )
 VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
     )
 RETURNING *;
 
 -- name: UpdatePaymentAccountByCompanyID :one
 UPDATE payment_accounts SET 
         account_number = $2,
-        account_type = $3,
+        bank_type = $3,
         first_name = $4,
         last_name = $5,
-        bank_branch = $6,
-        bank_code = $7,
-        bank_name = $8
+        bank_code = $6,
+        bank_name = $7,
+        bank_id = $8,
+        bank_currency = $9
     WHERE company_id = $1
 RETURNING *;
 

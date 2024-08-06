@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
+	"log/slog"
 	"time"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -18,6 +18,7 @@ type Service interface {
 	Health() map[string]string
 	NewRepository() *repository.Queries
 	NewRawDB() *sql.DB
+	CreateTable(tableName string, columns []string) error
 }
 
 type service struct {
@@ -26,27 +27,15 @@ type service struct {
 }
 
 var (
-	database   = os.Getenv("DB_DATABASE")
-	password   = os.Getenv("DB_PASSWORD")
-	username   = os.Getenv("DB_USERNAME")
-	port       = os.Getenv("DB_PORT")
-	host       = os.Getenv("DB_HOST")
 	dbInstance *service
 )
 
-func NewService() Service {
+func NewService(connStr string) Service {
 	// Reuse Connection
 	if dbInstance != nil {
 		return dbInstance
 	}
-	connStr := fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		username,
-		password,
-		host,
-		port,
-		database,
-	)
+
 	db, err := sql.Open("pgx", connStr)
 	if err != nil {
 		log.Fatal(err)
@@ -84,4 +73,29 @@ func (s *service) Health() map[string]string {
 	return map[string]string{
 		"message": "It's healthy",
 	}
+}
+
+func (s *service) CreateTable(tableName string, columns []string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cols := ""
+	for _, col := range columns {
+
+		if col == columns[len(columns)-1] {
+			cols += col
+		} else {
+			cols += col + ", "
+		}
+	}
+
+	query := fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s (%s)", tableName, cols)
+	_, err := s.db.ExecContext(ctx, query)
+	if err != nil {
+		return err
+	}
+
+	slog.Info("Table created successfully", "TABLE", tableName)
+
+	return nil
 }
