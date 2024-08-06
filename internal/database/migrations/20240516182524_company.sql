@@ -112,7 +112,7 @@ CREATE TABLE IF NOT EXISTS payment_accounts (
     bank_name VARCHAR(100) NOT NULL,
     bank_code VARCHAR(50) NOT NULL,
     is_deleted BOOLEAN NOT NULL DEFAULT false,
-    bank_id VARCHAR(50) NOT NULL,
+    bank_id INTEGER NOT NULL, 
     bank_currency VARCHAR(5) NOT NULL DEFAULT 'GHS',
 
     company_id VARCHAR(21) NOT NULL,
@@ -142,7 +142,7 @@ CREATE TABLE IF NOT EXISTS payout_accounts (
     percentage_charge DOUBLE PRECISION NOT NULL,
     active BOOLEAN NOT NULL DEFAULT true,
 
-    bank_id VARCHAR(150) NOT NULL,
+    bank_id INTEGER NOT NULL, 
     payment_account_id VARCHAR(150) NOT NULL,
 
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,

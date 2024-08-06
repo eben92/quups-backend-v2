@@ -173,10 +173,24 @@ func (s *service) setupThirdPartyWallet(company userdto.CompanyInternalDTO, data
 	return response.Data, nil
 }
 
-func (s *service) setUpPayoutAccont(acc models.ThirdPartyWallet) error {
+func (s *service) setUpPayoutAccont(paymentAcc repository.PaymentAccount, acc models.ThirdPartyWallet) error {
 	repo := s.db.NewRepository()
 
-	_, err := repo.CreatePayoutAccount(s.ctx, repository.CreatePayoutAccountParams{})
+	_, err := repo.CreatePayoutAccount(s.ctx, repository.CreatePayoutAccountParams{
+		PaymentAccountID:   paymentAcc.ID,
+		IDInt:              int32(acc.ID),
+		Currency:           acc.Currency,
+		BusinessName:       acc.BusinessName,
+		AccountNumber:      acc.AccountNumber,
+		PrimayContactName:  acc.PrimaryContactName,
+		PrimayContactEmail: acc.PrimaryContactEmail,
+		PrimayContactPhone: acc.PrimaryContactPhone,
+		PercentageCharge:   acc.PercentageCharge,
+		SubaccountCode:     acc.SubAccountCode,
+		SettlementBank:     acc.SettlementBank,
+		Active:             acc.Active,
+		BankID:             int32(acc.Bank),
+	})
 
 	if err != nil {
 		slog.Error("setUpPayoutAccont - CreatePayoutAccount", "error", err)
@@ -228,12 +242,11 @@ func (s *service) SetupAccount(data paymentdto.ReqPaymentDTO) error {
 	}
 
 	repo := s.db.NewRepository()
-	errChan := make(chan error)
-
-	defer close(errChan)
+	errChan := make(chan error, 1)
+	paymChan := make(chan repository.PaymentAccount, 1)
 
 	go func() {
-		_, err := repo.CreatePaymentAccount(s.ctx, repository.CreatePaymentAccountParams{
+		pacc, err := repo.CreatePaymentAccount(s.ctx, repository.CreatePaymentAccountParams{
 			CompanyID:     company.ID,
 			AccountNumber: data.PaymentDetails.AccountNumber,
 			BankType:      data.PaymentDetails.BankType,
@@ -252,44 +265,47 @@ func (s *service) SetupAccount(data paymentdto.ReqPaymentDTO) error {
 			return
 		}
 
+		paymChan <- pacc
+
 		err = s.AddBillingAddress(company, data.Address)
 
 		if err != nil {
 			errChan <- err
 			return
 		}
-
-		// errChan <- nil
-
 	}()
 
-	if errChan != nil {
+	close(paymChan)
 
+	if errChan != nil {
 		return errors.New("failed to setup payment account. please try again")
 	}
 
-	// if err != nil {
-	// 	slog.Error("SetupAccount - CreatePaymentAccount", "error", err)
+	walChan := make(chan models.ThirdPartyWallet, 1)
 
-	// 	return errors.New("failed to setup payment account. please try again")
-	// }'
+	// go func() {
+	// 	wallet, err := s.setupThirdPartyWallet(company, data)
+
+	// 	if err != nil {
+	// 		errChan <- err
+	// 		return
+	// 	}
+
+	// 	walChan <- wallet
+
+	// }()
+	close(walChan)
 
 	go func() {
-		wallet, err := s.setupThirdPartyWallet(company, data)
+		wallet := <-walChan
+		pacc := <-paymChan
+
+		err := s.setUpPayoutAccont(pacc, wallet)
 
 		if err != nil {
 			errChan <- err
 			return
 		}
-
-		err = s.setUpPayoutAccont(wallet)
-
-		if err != nil {
-			errChan <- err
-			return
-		}
-
-		// errChan <- nil
 
 	}()
 

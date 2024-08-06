@@ -5,7 +5,7 @@ import "errors"
 type ReqBankDetailsDTO struct {
 	BankCode      string `json:"bank_code"`
 	AccountNumber string `json:"account_number"`
-	BankID        string `json:"bank_id"`
+	BankID        int32  `json:"bank_id"`
 	BankCurrency  string `json:"bank_currency"`
 	BankName      string `json:"bank_name"`
 	FirstName     string `json:"first_name"`
@@ -36,7 +36,7 @@ func ValidateReqPaymentDTO(body ReqPaymentDTO) error {
 		return errors.New("bank_code and account_number are required")
 	}
 
-	if body.PaymentDetails.BankID == "" || body.PaymentDetails.BankCurrency == "" || body.PaymentDetails.BankName == "" || body.PaymentDetails.FirstName == "" || body.PaymentDetails.LastName == "" {
+	if body.PaymentDetails.BankID == 0 || body.PaymentDetails.BankCurrency == "" || body.PaymentDetails.BankName == "" || body.PaymentDetails.FirstName == "" || body.PaymentDetails.LastName == "" {
 		return errors.New("bank_id, bank_currency, bank_name, first_name and last_name are required")
 	}
 
