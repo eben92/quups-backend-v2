@@ -16,12 +16,19 @@ func GetTestAuthContext() local_jwt.AuthContext {
 	}
 }
 
-func SetTestContext(key *local_jwt.ContextKey) (context.Context, error) {
+type Claims struct {
+	Sub      string `json:"sub"`
+	Issuer   string `json:"issuer"`
+	Name     string `json:"name"`
+	ClientID string `json:"client_id"`
+}
+
+func SetTestContext(key *local_jwt.ContextKey, c Claims) (context.Context, error) {
 	claims := jwt.MapClaims{
-		"sub":       "test",
-		"issuer":    "issuer",
-		"name":      "test",
-		"client_id": "123456",
+		"sub":       c.Sub,
+		"issuer":    c.Issuer,
+		"name":      c.Name,
+		"client_id": c.ClientID,
 	}
 
 	ctx := context.Background()
