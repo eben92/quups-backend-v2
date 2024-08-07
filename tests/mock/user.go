@@ -8,27 +8,32 @@ import (
 )
 
 type MockUserMgt interface {
-	CreateUser() (userdto.UserInternalDTO, error)
+	CreateUser(data userdto.CreateUserParams) (userdto.UserInternalDTO, error)
 }
 
 type MockUserSvc struct {
-	db database.Service
+	db  database.Service
+	ctx context.Context
 }
 
-func NewMockSvc(db database.Service) MockUserMgt {
-	return &MockUserSvc{db: db}
+func NewMockSvc(ctx context.Context, db database.Service) MockUserMgt {
+	return &MockUserSvc{ctx: ctx, db: db}
 }
 
-func (m *MockUserSvc) CreateUser() (userdto.UserInternalDTO, error) {
-	usersvc := userservice.NewUserService(context.Background(), m.db)
-
-	u, err := usersvc.Create(userdto.CreateUserParams{
+func GetSampleUser() userdto.CreateUserParams {
+	return userdto.CreateUserParams{
 		Email:    "test@user.com",
 		Name:     "Test User",
 		Msisdn:   "0200000000",
 		Gender:   "male",
 		Password: "123456",
-	})
+	}
+}
+
+func (m *MockUserSvc) CreateUser(data userdto.CreateUserParams) (userdto.UserInternalDTO, error) {
+	usersvc := userservice.NewUserService(m.ctx, m.db)
+
+	u, err := usersvc.Create(data)
 
 	return u, err
 }
