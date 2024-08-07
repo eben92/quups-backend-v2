@@ -9,6 +9,7 @@ import (
 	"slices"
 	"strings"
 
+	"quups-backend/internal/database/repository"
 	model "quups-backend/internal/database/repository"
 	userdto "quups-backend/internal/services/user-service/dto"
 	"quups-backend/internal/services/user-service/models"
@@ -193,8 +194,37 @@ func (s *service) CreateCompany(body userdto.CreateCompanyParams) (userdto.Compa
 	return c, nil
 }
 
-func (s *service) CreatePaymentAccount() {
+func (s *service) CreatePaymentAccount(data repository.CreatePaymentAccountParams) (model.PaymentAccount, error) {
+	result := model.PaymentAccount{}
+	company, err := s.GetVendorCompanyById(data.CompanyID)
 
+	if err != nil {
+		slog.Error("error fetching company", "Error", err)
+
+		return result, errors.New("internal server error")
+	}
+
+	repo := s.db.NewRepository()
+
+	pacc, err := repo.CreatePaymentAccount(s.ctx, repository.CreatePaymentAccountParams{
+		CompanyID:     company.Company.ID,
+		AccountNumber: data.AccountNumber,
+		BankType:      data.BankType,
+		FirstName:     data.FirstName,
+		LastName:      data.LastName,
+		BankCode:      data.BankCode,
+		BankName:      data.BankName,
+		BankID:        data.BankID,
+		BankCurrency:  data.BankCurrency,
+	})
+
+	if err != nil {
+		slog.Error("error creating payment account", "Error", err)
+
+		return result, errors.New("error creating payment account")
+	}
+
+	return pacc, nil
 }
 
 // func (s *service) createPayoutAccount(qtx model.Queries) {
@@ -265,6 +295,9 @@ func (s *service) GetCompanyByID(id string) (userdto.CompanyInternalDTO, error) 
 	return result, nil
 }
 
+// GetUserCompany fetches the company of the authenticated user from the context and returns it
+// it uses the company id and user id from the context to fetch the company
+// making sure the user is a member of the company before returning it
 func (s *service) GetUserCompany() (userdto.CompanyInternalDTO, error) {
 	// todo: use userid and companyid to get company
 	companyCTX, err := local_jwt.GetAuthContext(s.ctx, local_jwt.COMPANY_CTX_KEY)
@@ -288,6 +321,83 @@ func (s *service) GetUserCompany() (userdto.CompanyInternalDTO, error) {
 	}
 
 	result = mapToCompanyInternalDTO(data)
+
+	return result, nil
+}
+
+// GetVendorCompany fetches the company of the authenticated vendor from the context and returns it
+// it uses the company id and vendor id from the context to fetch the company
+// making sure the vendor is a member of the company before returning it
+func (s *service) GetVendorCompany() (userdto.TeamMemberDTO, error) {
+	result := userdto.TeamMemberDTO{}
+	userCtx, err := local_jwt.GetAuthContext(s.ctx, local_jwt.AUTH_CTX_KEY)
+	vendorCtx, err := local_jwt.GetAuthContext(s.ctx, local_jwt.COMPANY_CTX_KEY)
+
+	slog.Info("getting vendor company", "vendor", userCtx.Name, "company", vendorCtx.Name)
+
+	if err != nil {
+		slog.Error("GetVendorCompany", "Error", err)
+
+		return result, errors.New("internal server error")
+
+	}
+
+	repo := s.db.NewRepository()
+
+	t, err := repo.GetUserTeam(s.ctx, model.GetUserTeamParams{
+		CompanyID: vendorCtx.Sub,
+		UserID: sql.NullString{
+			String: userCtx.Sub,
+			Valid:  true,
+		},
+	})
+
+	if err != nil {
+		slog.Error("error fetching vendor company", "error", err)
+
+		return result, errors.New("could not find user company")
+	}
+
+	result = mapToVendorCompDTO(t)
+
+	slog.Info("vendor company retrieved successfully")
+
+	return result, nil
+}
+
+// GetVendorCompanyById fetches the company of the authenticated vendor from the context and returns it
+func (s *service) GetVendorCompanyById(companyID string) (userdto.TeamMemberDTO, error) {
+	result := userdto.TeamMemberDTO{}
+	userCtx, err := local_jwt.GetAuthContext(s.ctx, local_jwt.AUTH_CTX_KEY)
+
+	slog.Info("getting vendor company", "vendor", userCtx.Name)
+
+	if err != nil {
+		slog.Error("GetVendorCompany", "Error", err)
+
+		return result, errors.New("internal server error")
+
+	}
+
+	repo := s.db.NewRepository()
+
+	t, err := repo.GetUserTeam(s.ctx, model.GetUserTeamParams{
+		CompanyID: companyID,
+		UserID: sql.NullString{
+			String: userCtx.Sub,
+			Valid:  true,
+		},
+	})
+
+	if err != nil {
+		slog.Error("error fetching vendor company", "error", err)
+
+		return result, errors.New("could not find user company")
+	}
+
+	result = mapToVendorCompDTO(t)
+
+	slog.Info("vendor company retrieved successfully")
 
 	return result, nil
 }
