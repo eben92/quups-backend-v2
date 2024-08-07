@@ -9,6 +9,7 @@ import (
 )
 
 type MockPaymentMgt interface {
+	SetupAccount(data paymentdto.ReqPaymentDTO) error
 }
 
 type MockPaymentSvc struct {
