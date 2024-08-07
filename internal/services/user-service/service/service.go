@@ -7,6 +7,7 @@ import (
 	"quups-backend/internal/database"
 	"quups-backend/internal/database/repository"
 	userdto "quups-backend/internal/services/user-service/dto"
+	"quups-backend/internal/services/user-service/models"
 	"quups-backend/internal/utils"
 )
 
@@ -53,6 +54,10 @@ type UserService interface {
 
 	// FindByMsisdn retrieves a user by their MSISDN (mobile number).
 	FindByMsisdn(msisdn utils.Msisdn) (userdto.UserInternalDTO, error)
+
+	// AddAddress adds a new user or company address to the database.
+	// It takes an Address struct as input and returns a model.Address and an error.
+	AddAddress(data models.Address) (repository.Address, error)
 }
 
 // UserService method returns User service interface
@@ -77,8 +82,15 @@ type CompanyService interface {
 	// GetCompanyByID retrieves a company by its ID and returns the company's internal DTO.
 	GetCompanyByID(id string) (userdto.CompanyInternalDTO, error)
 
-	// GetUserCompany retrieves a company by its ID via context and returns the company's internal DTO.
+	// GetUserCompany fetches the company of the authenticated user from the context and returns it
+	// it uses the company id and user id from the context to fetch the company
+	// making sure the user is a member of the company before returning it
 	GetUserCompany() (userdto.CompanyInternalDTO, error)
+
+	// GetVendorCompany fetches the company of the authenticated vendor from the context and returns it
+	// it uses the company id and vendor id from the context to fetch the company
+	// making sure the vendor is a member of the company before returning it
+	GetVendorCompany() (userdto.TeamMemberDTO, error)
 }
 
 // CompanyService method
