@@ -10,8 +10,10 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
+	"quups-backend/internal/database/repository"
 	model "quups-backend/internal/database/repository"
 	userdto "quups-backend/internal/services/user-service/dto"
+	"quups-backend/internal/services/user-service/models"
 	"quups-backend/internal/utils"
 	local_jwt "quups-backend/internal/utils/jwt"
 )
@@ -287,7 +289,7 @@ func (s *service) GetUserTeams() ([]userdto.TeamMemberDTO, error) {
 	}
 
 	for _, tm := range t {
-		ut := mapToUserTeamsInternalDTO(tm)
+		ut := mapToVendorCompaniesDTO(tm)
 
 		results = append(results, ut)
 	}
@@ -325,7 +327,7 @@ func (s *service) GetUserTeam(companyid string) (userdto.TeamMemberDTO, error) {
 		return results, errors.New("could not find user company")
 	}
 
-	results = mapToUserTeamInternalDTO(t)
+	results = mapToVendorCompDTO(t)
 
 	slog.Info("user company retrieved successfully")
 
@@ -384,6 +386,40 @@ func (s *service) Delete(id string) {
 	// todo:
 }
 
+// AddAddress adds a new user or company address to the database.
+// It takes an Address struct as input and returns a model.Address and an error.
+func (s *service) AddAddress(data models.Address) (repository.Address, error) {
+	repo := s.db.NewRepository()
+	formattedAddr := fmt.Sprintf("%s, %s, %s", data.Street, data.City, data.Region)
+
+	if data.FormattedAddress != "" {
+		formattedAddr = data.FormattedAddress
+	}
+
+	result, err := repo.AddAddress(s.ctx, repository.AddAddressParams{
+		CompanyID:        sql.NullString{String: data.CompanyID},
+		Msisdn:           sql.NullString{String: data.Msisdn},
+		IsDefault:        true,
+		City:             data.City,
+		Street:           data.Street,
+		Region:           data.Region,
+		PostalCode:       sql.NullString{String: data.PostalCode},
+		FormattedAddress: sql.NullString{String: formattedAddr},
+		Latitude:         sql.NullFloat64{Float64: data.Latitude},
+		Longitude:        sql.NullFloat64{Float64: data.Longitude},
+		UserID:           sql.NullString{String: data.UserID},
+		Description:      sql.NullString{String: data.Description},
+	})
+
+	if err != nil {
+		slog.Error("AddAddress", "error", err)
+
+		return result, errors.New("failed to add address. please try again")
+	}
+
+	return result, nil
+}
+
 func mapToUserInternalDTO(user model.User) userdto.UserInternalDTO {
 	dto := userdto.UserInternalDTO{
 		ID:       user.ID,
@@ -398,7 +434,7 @@ func mapToUserInternalDTO(user model.User) userdto.UserInternalDTO {
 	return dto
 }
 
-func mapToUserTeamInternalDTO(t model.GetUserTeamRow) userdto.TeamMemberDTO {
+func mapToVendorCompDTO(t model.GetUserTeamRow) userdto.TeamMemberDTO {
 	tm := userdto.TeamMemberDTO{
 		ID:        t.ID,
 		CompanyID: t.CompanyID,
@@ -422,7 +458,7 @@ func mapToUserTeamInternalDTO(t model.GetUserTeamRow) userdto.TeamMemberDTO {
 	return tm
 }
 
-func mapToUserTeamsInternalDTO(t model.GetUserTeamsRow) userdto.TeamMemberDTO {
+func mapToVendorCompaniesDTO(t model.GetUserTeamsRow) userdto.TeamMemberDTO {
 	tm := userdto.TeamMemberDTO{
 		ID:        t.ID,
 		CompanyID: t.CompanyID,
